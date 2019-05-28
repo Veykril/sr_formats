@@ -14,10 +14,11 @@ use std::path::PathBuf;
 pub mod jmxvbms;
 pub mod jmxvbmt;
 pub mod jmxvbsk;
-pub mod jmxvcpd;
+pub mod jmxvbsr;
 pub mod jmxvddj;
+pub mod jmxvmapm;
+pub mod jmxvmapo;
 pub mod jmxvnvm;
-pub mod jmxvres;
 
 pub mod enums;
 pub use enums::*;

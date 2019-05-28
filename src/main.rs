@@ -1,4 +1,3 @@
-#![feature(try_blocks)]
 
 use std::path::PathBuf;
 
@@ -23,11 +22,8 @@ fn main() {
             Ok(path) => path,
             Err(e) => continue,
         };
-        let res: Result<_, Box<dyn std::error::Error>> = try {
-            let buf = std::fs::read(&path)?;
-            sr_formats::jmxvnvm::JmxNvm::parse(&buf).map_err(|e| format!("{:?}", e))?
-        };
-        match res {
+        let buf = std::fs::read(&path).unwrap();
+        match sr_formats::jmxvnvm::JmxNvm::parse(&buf) {
             Ok(mut mat) => (), //mats.append(&mut mat.0),
             Err(e) => println!("{:?}", path),
         }
