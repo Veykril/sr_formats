@@ -1,4 +1,3 @@
-
 use nalgebra::Vector3;
 use nom::{
     bytes::complete::tag,
@@ -8,7 +7,6 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
-
 
 use crate::{parse_objects_u16, vector3_f32};
 
@@ -55,7 +53,6 @@ pub struct JmxMapObject {
     pub objects: Vec<MapObjectGroup>,
 }
 
-
 impl JmxMapObject {
     pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
         map(
@@ -65,25 +62,3 @@ impl JmxMapObject {
         .map(|(_, this)| this)
     }
 }
-
-
-/*
-
-12  char[]  Header      //JMXVMAPO1001
-for (int i = 0; i < 144; i++) //2.5f
-{
-    2	ushort	group.entryCount
-    for (int ii = 0; ii < group.entryCount; ii++)
-    {
-        4	uint	entry.ObjectID	//from MapObjectIndex
-        4	float	entry.X
-        4	float	entry.Y
-        4	float	entry.Z
-        2	ushort	entry.Visibility //0xFFFF visible
-        4	float	entry.Theta
-        4	uint	entry.UniqueID
-        2	ushort	entry.Scale
-        2	ushort	entry.RegionID
-    }
-}
-*/

@@ -1,5 +1,3 @@
-
-use nalgebra::Vector3;
 use nom::{
     bytes::complete::{tag, take},
     combinator::map,
@@ -8,9 +6,6 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
-
-
-use crate::{parse_objects_u16, vector3_f32};
 
 pub struct MapMeshCell {
     pub height: u32,
@@ -92,7 +87,6 @@ pub fn string_6<'a, E: nom::error::ParseError<&'a [u8]>>(
 pub struct JmxMapMesh {
     pub blocks: Vec<MapBlock>,
 }
-
 
 impl JmxMapMesh {
     pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {

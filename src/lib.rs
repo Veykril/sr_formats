@@ -16,8 +16,10 @@ pub mod jmxvbmt;
 pub mod jmxvbsk;
 pub mod jmxvbsr;
 pub mod jmxvddj;
+pub mod jmxvenvi;
 pub mod jmxvmapm;
 pub mod jmxvmapo;
+pub mod jmxvmapt;
 pub mod jmxvnvm;
 
 pub mod enums;
@@ -96,4 +98,38 @@ fn parse_objects_u8<'a, T, F: Fn(&'a [u8]) -> IResult<&'a [u8], T>>(
     parse_fn: F,
 ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>> {
     parse_objects(le_u8, parse_fn)
+}
+
+pub fn count_indexed<I, O, E, F>(f: F, count: usize) -> impl Fn(I) -> IResult<I, Vec<O>, E>
+where
+    I: Clone + PartialEq,
+    F: Fn(I, usize) -> IResult<I, O, E>,
+    E: ParseError<I>,
+{
+    move |i: I| {
+        let mut input = i.clone();
+        let mut res = Vec::new();
+
+        for idx in 0..count {
+            let input_ = input.clone();
+            match f(input_, idx) {
+                Ok((i, o)) => {
+                    res.push(o);
+                    input = i;
+                }
+                Err(nom::Err::Error(e)) => {
+                    return Err(nom::Err::Error(E::append(
+                        i,
+                        nom::error::ErrorKind::Count,
+                        e,
+                    )));
+                }
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+        }
+
+        Ok((input, res))
+    }
 }
