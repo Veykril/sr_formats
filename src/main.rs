@@ -1,4 +1,5 @@
-use std::path::PathBuf;
+use glob::glob;
+use std::{ffi::OsStr, path::PathBuf};
 
 fn main() {
     /*
@@ -13,18 +14,45 @@ fn main() {
         .serialize(&t.0)
         .unwrap();
     return;*/
-    use glob::glob;
 
     //let mut mats = Vec::with_capacity(100);
-    for entry in glob("D:/Silkroad/Data/navmesh/**/*.nvm").expect("Failed to read glob pattern") {
-        let path = match entry {
+    use sr_formats::*;
+    let exts = [
+        "bms", "dof", "bmt", "ban", "bsk", "bsr", "cpd", "cpd", "nvm",
+    ];
+    for entry in glob("D:/Silkroad/Data/**/*").expect("Failed to read glob pattern") {
+        let path: PathBuf = match entry {
             Ok(path) => path,
             Err(e) => continue,
         };
+        let ext = path.extension().and_then(OsStr::to_str);
+        let ext = if let Some(ext) = ext {
+            if exts.iter().position(|ext2| *ext2 == ext).is_some() {
+                ext
+            } else {
+                continue;
+            }
+        } else {
+            continue;
+        };
         let buf = std::fs::read(&path).unwrap();
-        match sr_formats::jmxvnvm::JmxNvm::parse(&buf) {
-            Ok(mut mat) => (), //mats.append(&mut mat.0),
-            Err(e) => println!("{:?}", path),
+        if buf.len() == 0 {
+            continue;
+        }
+        let res = match ext {
+            "bms" => None,
+            "dof" => None,
+            "bmt" => jmxvbmt::JmxMat::parse(&buf).err(),
+            "ban" => None,
+            "bsk" => jmxvbsk::JmxSkeleton::parse(&buf).err(),
+            "bsr" => jmxvbsr::JmxRes::parse(&buf).err(),
+            "cpd" => jmxvcpd::JmxCompound::parse(&buf).err(),
+            "nvm" => None,
+            _ => None,
+        };
+        match res {
+            Some(_e) => println!("{:?}", path),
+            None => (),
         }
     }
     /*

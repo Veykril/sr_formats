@@ -78,9 +78,11 @@ impl MapBlock {
 pub fn string_6<'a, E: nom::error::ParseError<&'a [u8]>>(
     i: &'a [u8],
 ) -> IResult<&'a [u8], String, E> {
-    use encoding::{all::WINDOWS_949, DecoderTrap, Encoding};
     map(take(6usize), |s| {
-        WINDOWS_949.decode(s, DecoderTrap::Replace).unwrap()
+        encoding_rs::EUC_KR
+            .decode_without_bom_handling(s)
+            .0
+            .into_owned()
     })(i)
 }
 

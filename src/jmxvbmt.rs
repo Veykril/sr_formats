@@ -1,5 +1,4 @@
 use bitflags::bitflags;
-use nalgebra::Vector4;
 use nom::{
     bytes::complete::tag,
     combinator::{cond, map},
@@ -9,7 +8,7 @@ use nom::{
 };
 use serde::Serialize;
 
-use crate::{parse_objects_u32, sized_string, vector4_f32};
+use crate::{parse_objects_u32, sized_string, vector4_f32, Vector4};
 
 bitflags! {
     #[derive(Serialize)]

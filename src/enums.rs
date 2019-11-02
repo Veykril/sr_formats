@@ -3,6 +3,34 @@ use serde::Serialize;
 
 use std::convert::TryFrom;
 
+#[derive(Debug, Clone, Copy)]
+pub struct UnknownResourceType(u32);
+
+impl std::error::Error for UnknownResourceType {}
+impl std::fmt::Display for UnknownResourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "encountered unknown ResourceType with value {:X}",
+            self.0
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct UnknownResourceAnimationType(u32);
+
+impl std::error::Error for UnknownResourceAnimationType {}
+impl std::fmt::Display for UnknownResourceAnimationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "encountered unknown ResourceAnimationType with value {:X}",
+            self.0
+        )
+    }
+}
+
 #[repr(u32)]
 #[derive(Debug, Serialize)]
 pub enum ResourceType {
@@ -33,7 +61,7 @@ impl ResourceType {
 }
 
 impl TryFrom<u32> for ResourceType {
-    type Error = ();
+    type Error = UnknownResourceType;
 
     fn try_from(val: u32) -> Result<Self, Self::Error> {
         match val {
@@ -46,7 +74,7 @@ impl TryFrom<u32> for ResourceType {
             0x20006 => Ok(ResourceType::Other),
             0x30000 => Ok(ResourceType::CompoundCharacter),
             0x30002 => Ok(ResourceType::CompoundObject),
-            _ => Err(()),
+            val => Err(UnknownResourceType(val)),
         }
     }
 }
@@ -260,7 +288,7 @@ impl ResourceAnimationType {
 }
 
 impl TryFrom<u32> for ResourceAnimationType {
-    type Error = ();
+    type Error = UnknownResourceAnimationType;
 
     fn try_from(val: u32) -> Result<Self, Self::Error> {
         Ok(match val {
@@ -436,7 +464,7 @@ impl TryFrom<u32> for ResourceAnimationType {
             0x3B => ResourceAnimationType::Emotion10,
             0x50 => ResourceAnimationType::Vendor01,
             0xBF => ResourceAnimationType::Shot,
-            _ => Err(())?,
+            val => return Err(UnknownResourceAnimationType(val)),
         })
     }
 }

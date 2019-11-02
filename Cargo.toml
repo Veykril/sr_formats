@@ -5,10 +5,9 @@ authors = ["Lukas Wirth <lukastw97@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-nom = { git = "https://github.com/Geal/nom", rev = "df18168" }
-nalgebra = { version = "0.17", features = ["serde-serialize"] }
+nom = "5"
 bitflags = "1.0"
-encoding = "0.2"
+encoding_rs = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 glob = "0.3"
 csv = "1.0"

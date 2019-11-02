@@ -1,13 +1,13 @@
-use crate::{count_indexed, parse_objects_u32, sized_string, vector3_f32};
-use nalgebra::Vector3;
 use nom::{
-    bytes::complete::{tag, take},
+    bytes::complete::tag,
     combinator::{flat_map, map},
     multi::count,
-    number::complete::{le_f32, le_u16, le_u32, le_u8},
+    number::complete::{le_f32, le_u16, le_u32},
     sequence::{pair, preceded, tuple},
     IResult,
 };
+
+use crate::{count_indexed, parse_objects_u32, sized_string, vector3_f32, Vector3};
 
 pub enum GraphPoint {
     Float {
@@ -91,8 +91,6 @@ pub struct EnvironmentGroupEntry {
     pub unk6: u16,
     pub unk7: u16,
 }
-
-
 
 impl EnvironmentGroupEntry {
     pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {

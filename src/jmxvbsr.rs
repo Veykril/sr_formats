@@ -1,8 +1,3 @@
-use crate::{
-    parse_objects_u32, sized_path, sized_string, vector2_f32, vector6_f32, ResourceAnimationType,
-    ResourceType,
-};
-use nalgebra::{Vector2, Vector6};
 use nom::{
     bytes::complete::tag,
     combinator::{cond, flat_map, map},
@@ -15,11 +10,16 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 
+use crate::{
+    parse_objects_u32, sized_path, sized_string, vector2_f32, vector6_f32, ResourceAnimationType,
+    ResourceType, Vector2,
+};
+
 #[derive(Debug, Serialize)]
 pub struct BoundingBox {
     pub root_mesh: String,
-    pub bounding_box0: Vector6<f32>,
-    pub bounding_box1: Vector6<f32>,
+    pub bounding_box0: [f32; 6],
+    pub bounding_box1: [f32; 6],
     pub extra_bounding_data: Vec<u8>,
 }
 

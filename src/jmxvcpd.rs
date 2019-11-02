@@ -7,8 +7,7 @@ use nom::{
 };
 use serde::Serialize;
 
-use core::convert::TryFrom;
-use std::path::PathBuf;
+use std::{convert::TryFrom, path::PathBuf};
 
 use crate::{parse_objects_u32, sized_string, ResourceType};
 

@@ -1,4 +1,3 @@
-use nalgebra::Vector3;
 use nom::{
     bytes::complete::tag,
     combinator::map,
@@ -8,7 +7,7 @@ use nom::{
     IResult,
 };
 
-use crate::{parse_objects_u16, vector3_f32};
+use crate::{parse_objects_u16, vector3_f32, Vector3};
 
 pub struct MapObject {
     pub id: u32,

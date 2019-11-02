@@ -1,4 +1,3 @@
-use nalgebra::{Vector3, Vector4};
 use nom::{
     bytes::complete::tag,
     combinator::map,
@@ -8,7 +7,7 @@ use nom::{
 };
 use serde::Serialize;
 
-use crate::{parse_objects_u32, sized_string, vector3_f32, vector4_f32};
+use crate::{parse_objects_u32, sized_string, vector3_f32, vector4_f32, Vector3, Vector4};
 
 #[derive(Debug, Serialize)]
 pub struct Bone {
