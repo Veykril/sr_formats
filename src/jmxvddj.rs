@@ -20,7 +20,9 @@ impl JmxTexture {
         map(
             preceded(
                 tag(b"JMXVDDJ 1000"),
-                flat_map(le_u32, |c| pair(le_u32, count(le_u8, c as usize))),
+                flat_map(le_u32, |texture_size| {
+                    pair(le_u32, count(le_u8, texture_size as usize - 8))
+                }),
             ),
             |(header_len, data)| JmxTexture { header_len, data },
         )(i)
