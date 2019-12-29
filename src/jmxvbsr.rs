@@ -170,7 +170,7 @@ impl AnimationGroup {
 pub struct JmxRes {
     pub header: JmxResHeader,
     pub bounding_box: BoundingBox,
-    pub material_set: Vec<MaterialDescriptor>,
+    pub material_sets: Vec<MaterialDescriptor>,
     pub mesh_paths: Vec<(PathBuf, Option<u32>)>,
     pub animation: Animation,
     pub skeleton_paths: Vec<(PathBuf, Vec<u8>)>,
@@ -183,7 +183,7 @@ impl JmxRes {
         let (_, header) = JmxResHeader::parse(i)?;
 
         let (_, bounding_box) = BoundingBox::parser()(&i[header.bounding_box_offset as usize..])?;
-        let (_, material_set) =
+        let (_, material_sets) =
             parse_objects_u32(MaterialDescriptor::parser())(&i[header.material_offset as usize..])?;
         let (_, mesh_paths) = parse_objects_u32(pair(sized_path, cond(header.unk0 == 1, le_u32)))(
             &i[header.mesh_offset as usize..],
@@ -201,7 +201,7 @@ impl JmxRes {
         Ok(JmxRes {
             header,
             bounding_box,
-            material_set,
+            material_sets,
             mesh_paths,
             animation,
             skeleton_paths,

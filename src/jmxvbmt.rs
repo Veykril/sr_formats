@@ -9,7 +9,9 @@ use nom::{
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::{parse_objects_u32, sized_string, vector4_f32, Vector4};
+use std::path::PathBuf;
+
+use crate::{parse_objects_u32, sized_path, sized_string, vector4_f32, Vector4};
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -42,10 +44,10 @@ pub struct Material {
     pub emissive: Vector4<f32>,
     pub specular_power: f32,
     pub material_flags: MaterialFlags,
-    pub diffuse_map: String,
+    pub diffuse_map: PathBuf,
     pub unk0: f32,
     pub unk1: u16,
-    pub same_dir_as_set: bool,
+    pub absolute_diffuse_map_path: bool,
     #[cfg_attr(feature = "serde", serde(skip))]
     pub normal_map: Option<(String, u32)>,
 }
@@ -66,7 +68,7 @@ impl Material {
                             panic!("Unknown MaterialFlags encountered 0b{:b}", flags)
                         })
                     }),
-                    sized_string,
+                    sized_path,
                     le_f32,
                     le_u16,
                     map(le_u8, |b| b != 0),
@@ -82,7 +84,7 @@ impl Material {
                     diffuse_map: data.7,
                     unk0: data.8,
                     unk1: data.9,
-                    same_dir_as_set: data.10,
+                    absolute_diffuse_map_path: data.10,
                     normal_map: None,
                 },
             )(i)
