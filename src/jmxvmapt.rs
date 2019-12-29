@@ -5,9 +5,11 @@ use nom::{
     number::complete::{le_u32, le_u8},
     sequence::{pair, preceded},
 };
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMapTexture {
     pub shadow_map_tiles: Vec<u8>, //9216
     pub header_len: u32,

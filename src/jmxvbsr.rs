@@ -6,6 +6,7 @@ use nom::{
     sequence::{pair, preceded, tuple},
     IResult,
 };
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use std::path::PathBuf;
@@ -15,7 +16,8 @@ use crate::{
     ResourceType, Vector2,
 };
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BoundingBox {
     pub root_mesh: String,
     pub bounding_box0: [f32; 6],
@@ -42,7 +44,8 @@ impl BoundingBox {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MaterialDescriptor {
     pub id: u32,
     pub path: PathBuf,
@@ -57,7 +60,8 @@ impl MaterialDescriptor {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Animation {
     pub unk0: u32,
     pub unk1: u32,
@@ -73,7 +77,8 @@ impl Animation {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MeshGroup {
     pub name: String,
     pub file_indices: Vec<u32>,
@@ -88,7 +93,8 @@ impl MeshGroup {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AnimationEvent {
     pub key_time: u32,
     pub typ: u32,
@@ -110,7 +116,8 @@ impl AnimationEvent {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AnimationGroupEntry {
     pub typ: ResourceAnimationType,
     pub file_index: u32,
@@ -139,7 +146,8 @@ impl AnimationGroupEntry {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AnimationGroup {
     pub name: String,
     pub animations: Vec<AnimationGroupEntry>,
@@ -157,7 +165,8 @@ impl AnimationGroup {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxRes {
     pub header: JmxResHeader,
     pub bounding_box: BoundingBox,
@@ -202,7 +211,8 @@ impl JmxRes {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxResHeader {
     pub material_offset: u32,
     pub mesh_offset: u32,

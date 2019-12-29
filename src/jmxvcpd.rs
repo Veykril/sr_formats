@@ -5,13 +5,15 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use std::{convert::TryFrom, path::PathBuf};
 
 use crate::{parse_objects_u32, sized_string, ResourceType};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxCompound {
     pub header: JmxCompoundHeader,
     pub collision_resource_path: PathBuf,
@@ -35,7 +37,8 @@ impl JmxCompound {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxCompoundHeader {
     pub collision_resources: u32,
     pub resource_list: u32,

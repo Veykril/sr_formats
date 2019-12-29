@@ -8,13 +8,14 @@ use nom::{
     sequence::{pair, preceded, tuple},
     IResult,
 };
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use crate::{parse_objects_u32, sized_string, vector2_f32, vector3_f32, Vector2, Vector3};
 
 bitflags! {
-    #[derive(Serialize)]
-    #[serde(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct VertexFlags: u32 {
         const HAS_LIGHT_MAP = 0x400;
         const UNKNOWN = 0x800;
@@ -23,8 +24,8 @@ bitflags! {
 }
 
 bitflags! {
-    #[derive(Serialize)]
-    #[serde(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct NavFlags: u32 {
         const UNK0 = 0x1;
         const UNK1 = 0x2;
@@ -33,7 +34,8 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Vertex {
     pub position: Vector3<f32>,
     pub normal: Vector3<f32>,
@@ -69,10 +71,12 @@ impl Vertex {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Unknown(pub f32, pub u32);
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothEdge {
     pub vertex_index0: u32,
     pub vertex_index1: u32,
@@ -89,7 +93,8 @@ impl ClothEdge {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothSimParams {
     pub unk0: u32,
     pub unk1: f32,
@@ -137,7 +142,8 @@ fn parse_cloth_edges<'a>(
     })
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothVertex {
     pub max_distance: f32,
     pub is_pinned: bool,
@@ -152,7 +158,8 @@ impl ClothVertex {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BoneIndexData {
     pub index0: u8,
     pub weight0: u16,
@@ -187,7 +194,8 @@ fn parse_bones<'a>(
     })
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Face(pub [u16; 3]);
 
 impl Face {
@@ -198,7 +206,8 @@ impl Face {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Gate {
     pub name: String,
     pub vertices: Vec<Vector3<f32>>,
@@ -222,7 +231,8 @@ impl Gate {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ObjectLines {
     pub vertex_source: u16,
     pub vertex_destination: u16,
@@ -257,7 +267,8 @@ impl ObjectLines {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavMesh {
     pub vertices: Vec<(Vector3<f32>, u8)>,
     pub ground: Vec<(Face, u16, Option<u8>)>,
@@ -312,7 +323,8 @@ impl NavMesh {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxBMesh {
     pub header: JmxBMeshHeader,
     pub vertices: Vec<Vertex>,
@@ -363,7 +375,8 @@ impl JmxBMesh {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxBMeshHeader {
     pub vertex: u32,
     pub skin: u32,

@@ -7,6 +7,7 @@ use nom::{
     sequence::{pair, preceded, tuple},
     IResult,
 };
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use crate::{
@@ -15,23 +16,24 @@ use crate::{
 };
 
 bitflags! {
-    #[derive(Serialize)]
-    #[serde(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct CollisionFlag: u16 {
         const HAS_COLLISION = 0xFFFF;
     }
 }
 
 bitflags! {
-    #[derive(Serialize)]
-    #[serde(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct EventZoneFlag: u16 {
         const UNK0 = 0x1;
         const HAS_COLLISION = 0x100;
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavEntry {
     pub id: u32,
     pub position: Vector3<f32>,
@@ -80,7 +82,8 @@ impl NavEntry {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavCell {
     pub min: Vector2<f32>,
     pub max: Vector2<f32>,
@@ -100,7 +103,8 @@ impl NavCell {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavRegionLink {
     pub min: Vector2<f32>,
     pub max: Vector2<f32>,
@@ -142,7 +146,8 @@ impl NavRegionLink {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavCellLink {
     pub min: Vector2<f32>,
     pub max: Vector2<f32>,
@@ -178,7 +183,8 @@ impl NavCellLink {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxNvm {
     pub nav_entries: Vec<NavEntry>,
     pub nav_extra_count: u32,

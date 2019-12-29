@@ -1,7 +1,49 @@
 use nom::{combinator::map_res, error::ParseError, number::complete::le_u32, IResult};
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use std::convert::TryFrom;
+
+#[repr(u32)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+pub enum NewInterfaceType {
+    CNIFMainFrame = 0,
+    CNIFrame = 1,
+    CNIFNormaltile = 2,
+    CNIFStretch = 3,
+    CNIFButton = 4,
+    CNIFStatic = 5,
+    CNIFEdit = 6,
+    CNIFTextBox = 7,
+    CNIFSlot = 8,
+    CNIFLattice = 9,
+    CNIFGauge = 10,
+    CNIFCheckBox = 11,
+    CNIFComboBox = 12,
+    CNIFVirticalScroll = 13,
+    CNIFPageManager = 14,
+    CNIFBarWnd = 15,
+    CNIFTabButton = 16,
+    CNIFBothSidesGauge = 17,
+    CNIFWnd = 18,
+    CNIFSlideCtrl = 19,
+    CNIFSpinButtonCtrl = 20,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct UnknownNewInterfaceType(u32);
+
+impl std::error::Error for UnknownNewInterfaceType {}
+impl std::fmt::Display for UnknownNewInterfaceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "encountered unknown UnknownNewInterfaceType with value {:X}",
+            self.0
+        )
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct UnknownResourceType(u32);
@@ -32,7 +74,8 @@ impl std::fmt::Display for UnknownResourceAnimationType {
 }
 
 #[repr(u32)]
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ResourceType {
     /// Characters of all races (EU, CH)
     Character = 0x20000,
@@ -80,7 +123,8 @@ impl TryFrom<u32> for ResourceType {
 }
 
 #[repr(u32)]
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum ResourceAnimationType {
     Pose = 0x3C,
 

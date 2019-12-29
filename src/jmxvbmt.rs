@@ -6,13 +6,14 @@ use nom::{
     sequence::{pair, preceded, tuple},
     IResult,
 };
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use crate::{parse_objects_u32, sized_string, vector4_f32, Vector4};
 
 bitflags! {
-    #[derive(Serialize)]
-    #[serde(transparent)]
+    #[cfg_attr(feature = "serde", derive(Serialize))]
+    #[cfg_attr(feature = "serde", serde(transparent))]
     pub struct MaterialFlags: u32 {
         const UNK0 = 0x1;
         const UNK1 = 0x2;
@@ -31,7 +32,8 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Material {
     pub name: String,
     pub diffuse: Vector4<f32>,
@@ -44,7 +46,7 @@ pub struct Material {
     pub unk0: f32,
     pub unk1: u16,
     pub same_dir_as_set: bool,
-    #[serde(skip)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub normal_map: Option<(String, u32)>,
 }
 
@@ -98,7 +100,8 @@ impl Material {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMat(pub Vec<Material>);
 
 impl JmxMat {

@@ -5,11 +5,13 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use crate::{parse_objects_u32, sized_string, vector3_f32, vector4_f32, Vector3, Vector4};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Bone {
     pub unk: u8,
     pub name: String,
@@ -54,7 +56,8 @@ impl Bone {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxSkeleton {
     pub bones: Vec<Bone>,
     pub unk0: u32,
