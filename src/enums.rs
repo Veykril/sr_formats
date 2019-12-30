@@ -327,7 +327,10 @@ pub enum ResourceAnimationType {
 
 impl ResourceAnimationType {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map_res(le_u32, TryFrom::try_from)(i)
+        nom::error::context(
+            "unknown ResourceAnimationType",
+            map_res(le_u32, TryFrom::try_from),
+        )(i)
     }
 }
 
@@ -338,7 +341,9 @@ impl TryFrom<u32> for ResourceAnimationType {
         Ok(match val {
             0x3C => ResourceAnimationType::Pose,
             0x00 => ResourceAnimationType::Stand1,
-            0x7A => ResourceAnimationType::Stand2,
+            | 0x7A 
+            | 0x8 /* 0x8 is used as Stand2 in older files? */
+                 => ResourceAnimationType::Stand2,
             0x3D => ResourceAnimationType::Stand3,
             0x51 => ResourceAnimationType::Stand4,
             0x06 => ResourceAnimationType::AttReady,

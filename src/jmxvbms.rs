@@ -3,6 +3,7 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     combinator::{cond, flat_map, map},
+    error::ParseError,
     multi::count,
     number::complete::{le_f32, le_i32, le_u16, le_u32, le_u8},
     sequence::{pair, preceded, tuple},
@@ -47,7 +48,9 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    fn parser<'a>(light_map: bool) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    fn parser<'a, E: ParseError<&'a [u8]>>(
+        light_map: bool,
+    ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 vector3_f32,
@@ -84,7 +87,8 @@ pub struct ClothEdge {
 }
 
 impl ClothEdge {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(tuple((le_u32, le_u32, le_f32)), |data| ClothEdge {
             vertex_index0: data.0,
             vertex_index1: data.1,
@@ -108,7 +112,8 @@ pub struct ClothSimParams {
 }
 
 impl ClothSimParams {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 le_u32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_u32,
@@ -128,8 +133,8 @@ impl ClothSimParams {
     }
 }
 
-fn parse_cloth_edges<'a>(
-) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Option<(Vec<ClothEdge>, Vec<u32>, ClothSimParams)>> {
+fn parse_cloth_edges<'a, E: ParseError<&'a [u8]>>(
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Option<(Vec<ClothEdge>, Vec<u32>, ClothSimParams)>, E> {
     flat_map(le_u32, move |c| {
         cond(
             c != 0,
@@ -150,7 +155,8 @@ pub struct ClothVertex {
 }
 
 impl ClothVertex {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(tuple((le_f32, le_u32)), |data| ClothVertex {
             max_distance: data.0,
             is_pinned: data.1 != 0,
@@ -168,7 +174,8 @@ pub struct BoneIndexData {
 }
 
 impl BoneIndexData {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(tuple((le_u8, le_u16, le_u8, le_u16)), |data| {
             BoneIndexData {
                 index0: data.0,
@@ -180,9 +187,9 @@ impl BoneIndexData {
     }
 }
 
-fn parse_bones<'a>(
+fn parse_bones<'a, E: ParseError<&'a [u8]>>(
     vertex_count: usize,
-) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Option<(Vec<String>, Vec<BoneIndexData>)>> {
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Option<(Vec<String>, Vec<BoneIndexData>)>, E> {
     flat_map(le_u32, move |bc| {
         cond(
             bc != 0,
@@ -199,7 +206,8 @@ fn parse_bones<'a>(
 pub struct Face(pub [u16; 3]);
 
 impl Face {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(tuple((le_u16, le_u16, le_u16)), |data| {
             Face([data.0, data.1, data.2])
         })
@@ -215,7 +223,8 @@ pub struct Gate {
 }
 
 impl Gate {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 sized_string,
@@ -245,7 +254,9 @@ pub struct ObjectLines {
 }
 
 impl ObjectLines {
-    pub fn parser<'a>(nav_flag: NavFlags) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>(
+        nav_flag: NavFlags,
+    ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 le_u16,
@@ -283,7 +294,9 @@ pub struct NavMesh {
 }
 
 impl NavMesh {
-    pub fn parser<'a>(nav_flag: NavFlags) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>(
+        nav_flag: NavFlags,
+    ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 parse_objects_u32(pair(vector3_f32, le_u8)),
@@ -339,8 +352,8 @@ pub struct JmxBMesh {
 }
 
 impl JmxBMesh {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
-        let (_, header) = JmxBMeshHeader::new(i)?;
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+        let (_, header) = JmxBMeshHeader::parse(i)?;
         let has_light_map = header.vertex_flags.contains(VertexFlags::HAS_LIGHT_MAP);
         let (_, (vertices, light_map_path)) = pair(
             parse_objects_u32(Vertex::parser(has_light_map)),
@@ -399,7 +412,7 @@ pub struct JmxBMeshHeader {
 }
 
 impl JmxBMeshHeader {
-    pub fn new(i: &[u8]) -> IResult<&[u8], Self> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             preceded(
                 alt((tag(b"JMXVBMS 0109"), tag(b"JMXVBMS 0110"))),

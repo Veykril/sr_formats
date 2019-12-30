@@ -1,6 +1,7 @@
 use nom::{
     bytes::complete::tag,
     combinator::map,
+    error::ParseError,
     number::complete::{le_u32, le_u8},
     sequence::{preceded, tuple},
     IResult,
@@ -26,7 +27,8 @@ pub struct Bone {
 }
 
 impl Bone {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 le_u8,
@@ -65,7 +67,7 @@ pub struct JmxSkeleton {
 }
 
 impl JmxSkeleton {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
             preceded(
                 tag("JMXVBSK 0101"),

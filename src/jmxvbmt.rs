@@ -2,6 +2,7 @@ use bitflags::bitflags;
 use nom::{
     bytes::complete::tag,
     combinator::{cond, map},
+    error::ParseError,
     number::complete::{le_f32, le_u16, le_u32, le_u8},
     sequence::{pair, preceded, tuple},
     IResult,
@@ -53,7 +54,8 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         |i| {
             map(
                 tuple((
@@ -107,7 +109,7 @@ impl Material {
 pub struct JmxMat(pub Vec<Material>);
 
 impl JmxMat {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
             preceded(tag(b"JMXVBMT 0102"), parse_objects_u32(Material::parser())),
             JmxMat,

@@ -96,25 +96,25 @@ where
 
 /// Reads a u32 and then runs `parse_fn` that many times.
 #[inline]
-fn parse_objects_u32<'a, T, F: Fn(&'a [u8]) -> IResult<&'a [u8], T>>(
+fn parse_objects_u32<'a, T, E: ParseError<&'a [u8]>, F: Fn(&'a [u8]) -> IResult<&'a [u8], T, E>>(
     parse_fn: F,
-) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>> {
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>, E> {
     parse_objects(le_u32, parse_fn)
 }
 
 /// Reads a u16 and then runs `parse_fn` that many times.
 #[inline]
-fn parse_objects_u16<'a, T, F: Fn(&'a [u8]) -> IResult<&'a [u8], T>>(
+fn parse_objects_u16<'a, T, E: ParseError<&'a [u8]>, F: Fn(&'a [u8]) -> IResult<&'a [u8], T, E>>(
     parse_fn: F,
-) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>> {
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>, E> {
     parse_objects(le_u16, parse_fn)
 }
 
 /// Reads a u8 and then runs `parse_fn` that many times.
 #[inline]
-fn parse_objects_u8<'a, T, F: Fn(&'a [u8]) -> IResult<&'a [u8], T>>(
+fn parse_objects_u8<'a, T, E: ParseError<&'a [u8]>, F: Fn(&'a [u8]) -> IResult<&'a [u8], T, E>>(
     parse_fn: F,
-) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>> {
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Vec<T>, E> {
     parse_objects(le_u8, parse_fn)
 }
 
@@ -179,3 +179,6 @@ pub struct Vector4<T> {
     pub z: T,
     pub w: T,
 }
+
+pub type VerboseError<'a> = nom::error::VerboseError<&'a [u8]>;
+pub type NormalError<'a> = (&'a [u8], nom::error::ErrorKind);

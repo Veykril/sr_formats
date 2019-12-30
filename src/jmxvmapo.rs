@@ -1,6 +1,7 @@
 use nom::{
     bytes::complete::tag,
     combinator::map,
+    error::ParseError,
     multi::count,
     number::complete::{le_f32, le_u16, le_u32},
     sequence::{preceded, tuple},
@@ -20,7 +21,8 @@ pub struct MapObject {
 }
 
 impl MapObject {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((le_u32, vector3_f32, le_u16, le_f32, le_u32, le_u16, le_u16)),
             |data| MapObject {
@@ -41,7 +43,8 @@ pub struct MapObjectGroup {
 }
 
 impl MapObjectGroup {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(parse_objects_u16(MapObject::parser()), |entries| {
             MapObjectGroup { entries }
         })
@@ -53,7 +56,7 @@ pub struct JmxMapObject {
 }
 
 impl JmxMapObject {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
             preceded(tag(b"JMXVMAPO1001"), count(MapObjectGroup::parser(), 144)),
             |objects| JmxMapObject { objects },

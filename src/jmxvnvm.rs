@@ -2,6 +2,7 @@ use bitflags::bitflags;
 use nom::{
     bytes::complete::tag,
     combinator::{flat_map, map},
+    error::ParseError,
     multi::count,
     number::complete::{le_f32, le_u16, le_u32, le_u8},
     sequence::{pair, preceded, tuple},
@@ -47,7 +48,8 @@ pub struct NavEntry {
 }
 
 impl NavEntry {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 le_u32,
@@ -91,7 +93,8 @@ pub struct NavCell {
 }
 
 impl NavCell {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((vector2_f32, vector2_f32, parse_objects_u8(le_u16))),
             |data| NavCell {
@@ -118,7 +121,8 @@ pub struct NavRegionLink {
 }
 
 impl NavRegionLink {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 vector2_f32,
@@ -159,7 +163,8 @@ pub struct NavCellLink {
 }
 
 impl NavCellLink {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 vector2_f32,
@@ -196,7 +201,7 @@ pub struct JmxNvm {
 }
 
 impl JmxNvm {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
             preceded(
                 tag(b"JMXVNVM 1000"),

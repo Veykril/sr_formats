@@ -1,6 +1,7 @@
 use nom::{
     bytes::complete::tag,
     combinator::{flat_map, map},
+    error::ParseError,
     multi::count,
     number::complete::{le_f32, le_u16, le_u32},
     sequence::{pair, preceded, tuple},
@@ -21,7 +22,9 @@ pub enum GraphPoint {
 }
 
 impl GraphPoint {
-    pub fn parser<'a>(idx: usize) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>(
+        idx: usize,
+    ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
         move |i| {
             if idx == 7 || idx == 8 || idx == 10 || idx == 11 || idx == 12 || idx == 15 {
                 map(pair(le_f32, le_f32), |(value, pos_on_graph)| {
@@ -54,7 +57,8 @@ pub struct EnvironmentGroup {
 }
 
 impl EnvironmentGroup {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 sized_string,
@@ -93,7 +97,8 @@ pub struct EnvironmentGroupEntry {
 }
 
 impl EnvironmentGroupEntry {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 sized_string,
@@ -130,7 +135,8 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 le_u16,

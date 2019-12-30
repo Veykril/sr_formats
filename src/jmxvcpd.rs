@@ -1,6 +1,7 @@
 use nom::{
     bytes::complete::tag,
     combinator::{map, map_res},
+    error::ParseError,
     number::complete::le_u32,
     sequence::{preceded, tuple},
     IResult,
@@ -21,7 +22,7 @@ pub struct JmxCompound {
 }
 
 impl JmxCompound {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         let (_, header) = JmxCompoundHeader::parse(i)?;
 
         let path_parser = map(sized_string, From::from);
@@ -54,7 +55,7 @@ pub struct JmxCompoundHeader {
 }
 
 impl JmxCompoundHeader {
-    pub fn parse(i: &[u8]) -> IResult<&[u8], Self> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             preceded(
                 tag(b"JMXVCPD 0101"),

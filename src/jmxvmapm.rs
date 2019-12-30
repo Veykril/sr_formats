@@ -1,6 +1,7 @@
 use nom::{
     bytes::complete::{tag, take},
     combinator::map,
+    error::ParseError,
     multi::count,
     number::complete::{le_f32, le_u16, le_u32, le_u8},
     sequence::{preceded, tuple},
@@ -14,7 +15,8 @@ pub struct MapMeshCell {
 }
 
 impl MapMeshCell {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(tuple((le_u32, le_u16, le_u8)), |data| MapMeshCell {
             height: data.0,
             texture: data.1,
@@ -36,7 +38,8 @@ pub struct MapBlock {
 }
 
 impl MapBlock {
-    pub fn parser<'a>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
+    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
+    {
         map(
             tuple((
                 string_6,
@@ -75,9 +78,7 @@ impl MapBlock {
 }
 
 #[inline]
-pub fn string_6<'a, E: nom::error::ParseError<&'a [u8]>>(
-    i: &'a [u8],
-) -> IResult<&'a [u8], String, E> {
+pub fn string_6<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], String, E> {
     map(take(6usize), |s| {
         encoding_rs::EUC_KR
             .decode_without_bom_handling(s)
@@ -91,7 +92,7 @@ pub struct JmxMapMesh {
 }
 
 impl JmxMapMesh {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
             preceded(tag(b"JMXVMAPM1000"), count(MapBlock::parser(), 6 * 6)),
             |blocks| JmxMapMesh { blocks },

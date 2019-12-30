@@ -1,6 +1,7 @@
 use nom::{
     bytes::complete::tag,
     combinator::{flat_map, map},
+    error::ParseError,
     multi::count,
     number::complete::{le_u32, le_u8},
     sequence::{pair, preceded},
@@ -17,7 +18,7 @@ pub struct JmxMapTexture {
 }
 
 impl JmxMapTexture {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
             preceded(
                 tag("JMXVMAPT 1001"),
