@@ -1,11 +1,10 @@
-use nom::{
-    bytes::complete::tag,
-    combinator::{map, map_res},
-    error::ParseError,
-    number::complete::le_u32,
-    sequence::{preceded, tuple},
-    IResult,
-};
+use nom::bytes::complete::tag;
+use nom::combinator::{map, map_res};
+use nom::error::ParseError;
+use nom::number::complete::le_u32;
+use nom::sequence::{preceded, tuple};
+use nom::IResult;
+
 #[cfg(feature = "serde")]
 use serde::Serialize;
 

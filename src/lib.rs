@@ -1,13 +1,11 @@
 #![warn(clippy::all)]
-use nom::{
-    bytes::complete::take,
-    combinator::{flat_map, map},
-    error::ParseError,
-    multi::count,
-    number::complete::{le_f32, le_u16, le_u32, le_u8},
-    sequence::tuple,
-    IResult, ToUsize,
-};
+use nom::bytes::complete::take;
+use nom::combinator::{flat_map, map};
+use nom::error::ParseError;
+use nom::multi::count;
+use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
+use nom::sequence::tuple;
+use nom::{IResult, ToUsize};
 
 use std::path::PathBuf;
 

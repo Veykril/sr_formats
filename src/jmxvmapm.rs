@@ -1,12 +1,10 @@
-use nom::{
-    bytes::complete::{tag, take},
-    combinator::map,
-    error::ParseError,
-    multi::count,
-    number::complete::{le_f32, le_u16, le_u32, le_u8},
-    sequence::{preceded, tuple},
-    IResult,
-};
+use nom::bytes::complete::{tag, take};
+use nom::combinator::map;
+use nom::error::ParseError;
+use nom::multi::count;
+use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
+use nom::sequence::{preceded, tuple};
+use nom::IResult;
 
 pub struct MapMeshCell {
     pub height: u32,

@@ -1,12 +1,10 @@
-use nom::{
-    bytes::complete::tag,
-    combinator::map,
-    error::ParseError,
-    multi::count,
-    number::complete::{le_f32, le_u16, le_u32},
-    sequence::{preceded, tuple},
-    IResult,
-};
+use nom::bytes::complete::tag;
+use nom::combinator::map;
+use nom::error::ParseError;
+use nom::multi::count;
+use nom::number::complete::{le_f32, le_u16, le_u32};
+use nom::sequence::{preceded, tuple};
+use nom::IResult;
 
 use crate::{parse_objects_u16, vector3_f32, Vector3};
 

@@ -1,4 +1,8 @@
-use nom::{combinator::map_res, error::ParseError, number::complete::le_u32, IResult};
+use nom::combinator::map_res;
+use nom::error::ParseError;
+use nom::number::complete::le_u32;
+use nom::IResult;
+
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
@@ -341,9 +345,8 @@ impl TryFrom<u32> for ResourceAnimationType {
         Ok(match val {
             0x3C => ResourceAnimationType::Pose,
             0x00 => ResourceAnimationType::Stand1,
-            | 0x7A 
-            | 0x8 /* 0x8 is used as Stand2 in older files? */
-                 => ResourceAnimationType::Stand2,
+            /* 0x8 is used as Stand2 in older files? */
+            0x7A | 0x8 => ResourceAnimationType::Stand2,
             0x3D => ResourceAnimationType::Stand3,
             0x51 => ResourceAnimationType::Stand4,
             0x06 => ResourceAnimationType::AttReady,

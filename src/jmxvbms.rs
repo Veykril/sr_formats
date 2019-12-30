@@ -1,14 +1,13 @@
 use bitflags::bitflags;
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    combinator::{cond, flat_map, map},
-    error::ParseError,
-    multi::count,
-    number::complete::{le_f32, le_i32, le_u16, le_u32, le_u8},
-    sequence::{pair, preceded, tuple},
-    IResult,
-};
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::combinator::{cond, flat_map, map};
+use nom::error::ParseError;
+use nom::multi::count;
+use nom::number::complete::{le_f32, le_i32, le_u16, le_u32, le_u8};
+use nom::sequence::{pair, preceded, tuple};
+use nom::IResult;
+
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
