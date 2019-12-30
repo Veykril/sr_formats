@@ -141,14 +141,12 @@ impl AnimationGroupEntry {
                 parse_objects_u32(AnimationEvent::parser()),
                 flat_map(le_u32, |c| pair(le_f32, count(vector2_f32, c as usize))),
             )),
-            |(typ, file_index, events, (walk_length, walk_graph))| {
-                dbg!(AnimationGroupEntry {
-                    typ,
-                    file_index,
-                    events,
-                    walk_length,
-                    walk_graph,
-                })
+            |(typ, file_index, events, (walk_length, walk_graph))| AnimationGroupEntry {
+                typ,
+                file_index,
+                events,
+                walk_length,
+                walk_graph,
             },
         )
     }
@@ -190,30 +188,21 @@ pub struct JmxRes {
 impl JmxRes {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         let (_, header) = nom::error::context("resource header", JmxResHeader::parse)(i)?;
-        dbg!(&header);
-        dbg!("header");
         let (_, bounding_box) = BoundingBox::parser()(&i[header.bounding_box_offset as usize..])?;
-        dbg!("bb");
         let (_, material_sets) =
             parse_objects_u32(MaterialDescriptor::parser())(&i[header.material_offset as usize..])?;
-        dbg!("mat");
         let (_, mesh_paths) = parse_objects_u32(pair(sized_path, cond(header.unk0 == 1, le_u32)))(
             &i[header.mesh_offset as usize..],
         )?;
-        dbg!("mseh");
         let (_, animation) = Animation::parser()(&i[header.animation_offset as usize..])?;
-        dbg!("anim");
         let (_, skeleton_paths) = parse_objects_u32(pair(sized_path, parse_objects_u32(le_u8)))(
             &i[header.skeleton_offset as usize..],
         )?;
-        dbg!("skel");
         let (_, mesh_groups) =
             parse_objects_u32(MeshGroup::parser())(&i[header.mesh_group_offset as usize..])?;
-        dbg!("meshg");
         let (_, animation_groups) = parse_objects_u32(AnimationGroup::parser())(
             &i[header.animation_group_offset as usize..],
         )?;
-        dbg!("animg");
 
         Ok(JmxRes {
             header,
