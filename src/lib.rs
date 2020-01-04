@@ -9,6 +9,7 @@ use nom::{IResult, ToUsize};
 
 use std::path::PathBuf;
 
+pub mod gmwpfort;
 pub mod jmxvban;
 pub mod jmxvbms;
 pub mod jmxvbmt;
