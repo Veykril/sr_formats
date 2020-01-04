@@ -19,6 +19,7 @@ pub mod jmxvenvi;
 pub mod jmxvmapm;
 pub mod jmxvmapo;
 pub mod jmxvmapt;
+pub mod jmxvmfo;
 pub mod jmxvnvm;
 pub mod newinterface;
 
