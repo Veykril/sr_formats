@@ -35,6 +35,43 @@ pub enum NewInterfaceType {
     CNIFSpinButtonCtrl = 20,
 }
 
+impl NewInterfaceType {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+        map_res(le_u32, TryFrom::try_from)(i)
+    }
+}
+
+impl TryFrom<u32> for NewInterfaceType {
+    type Error = UnknownNewInterfaceType;
+
+    fn try_from(val: u32) -> Result<Self, Self::Error> {
+        match val {
+            0 => Ok(NewInterfaceType::CNIFMainFrame),
+            1 => Ok(NewInterfaceType::CNIFrame),
+            2 => Ok(NewInterfaceType::CNIFNormaltile),
+            3 => Ok(NewInterfaceType::CNIFStretch),
+            4 => Ok(NewInterfaceType::CNIFButton),
+            5 => Ok(NewInterfaceType::CNIFStatic),
+            6 => Ok(NewInterfaceType::CNIFEdit),
+            7 => Ok(NewInterfaceType::CNIFTextBox),
+            8 => Ok(NewInterfaceType::CNIFSlot),
+            9 => Ok(NewInterfaceType::CNIFLattice),
+            10 => Ok(NewInterfaceType::CNIFGauge),
+            11 => Ok(NewInterfaceType::CNIFCheckBox),
+            12 => Ok(NewInterfaceType::CNIFComboBox),
+            13 => Ok(NewInterfaceType::CNIFVirticalScroll),
+            14 => Ok(NewInterfaceType::CNIFPageManager),
+            15 => Ok(NewInterfaceType::CNIFBarWnd),
+            16 => Ok(NewInterfaceType::CNIFTabButton),
+            17 => Ok(NewInterfaceType::CNIFBothSidesGauge),
+            18 => Ok(NewInterfaceType::CNIFWnd),
+            19 => Ok(NewInterfaceType::CNIFSlideCtrl),
+            20 => Ok(NewInterfaceType::CNIFSpinButtonCtrl),
+            val => Err(UnknownNewInterfaceType(val)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct UnknownNewInterfaceType(u32);
 

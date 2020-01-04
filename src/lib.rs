@@ -20,6 +20,7 @@ pub mod jmxvmapm;
 pub mod jmxvmapo;
 pub mod jmxvmapt;
 pub mod jmxvnvm;
+pub mod newinterface;
 
 pub mod enums;
 pub use enums::*;
@@ -39,6 +40,34 @@ pub fn sized_string<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8
 #[inline]
 pub fn sized_path<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], PathBuf, E> {
     map(sized_string, From::from)(i)
+}
+
+#[inline]
+pub fn fixed_string<'a, E: ParseError<&'a [u8]>>(
+    size: usize,
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], String, E> {
+    map(take(size), move |bytes: &'a [u8]| {
+        let len = bytes.iter().position(|&b| b == 0).unwrap_or(size);
+        encoding_rs::EUC_KR
+            .decode_without_bom_handling(&bytes[..len])
+            .0
+            .into_owned()
+    })
+}
+
+#[inline]
+pub fn fixed_string_64<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], String, E> {
+    fixed_string(64)(i)
+}
+
+#[inline]
+pub fn fixed_string_128<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], String, E> {
+    fixed_string(128)(i)
+}
+
+#[inline]
+pub fn fixed_string_256<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], String, E> {
+    fixed_string(256)(i)
 }
 
 /// Reads a [f32; 6] array
