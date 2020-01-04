@@ -16,6 +16,7 @@ pub mod jmxvbsk;
 pub mod jmxvbsr;
 pub mod jmxvcpd;
 pub mod jmxvddj;
+pub mod jmxvdof;
 pub mod jmxvenvi;
 pub mod jmxvmapm;
 pub mod jmxvmapo;
@@ -31,6 +32,19 @@ pub use enums::*;
 #[inline]
 pub fn sized_string<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], String, E> {
     map(flat_map(le_u32, take), |s| {
+        encoding_rs::EUC_KR
+            .decode_without_bom_handling(s)
+            .0
+            .into_owned()
+    })(i)
+}
+
+/// Reads a u16, then reads the amount of bytes specified by the u32 and parses it as a EUC_KR string encoded string
+#[inline]
+pub fn small_sized_string<'a, E: ParseError<&'a [u8]>>(
+    i: &'a [u8],
+) -> IResult<&'a [u8], String, E> {
+    map(flat_map(le_u16, take), |s| {
         encoding_rs::EUC_KR
             .decode_without_bom_handling(s)
             .0
@@ -120,7 +134,7 @@ where
     S: Fn(&'a [u8]) -> IResult<&'a [u8], R, E>,
     R: ToUsize,
 {
-    move |input: &[u8]| flat_map(&count_fn, |c| count(&parse_fn, c.to_usize()))(input)
+    flat_map(&count_fn, |c| count(&parse_fn, c.to_usize()))
 }
 
 /// Reads a u32 and then runs `parse_fn` that many times.
