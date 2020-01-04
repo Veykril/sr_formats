@@ -62,7 +62,7 @@ pub struct RoomObjectEntry {
     pub rotation: Vector3<f32>,
     pub scale: Vector3<f32>,
     pub flag: u32,
-    pub waterExtra: Option<u32>,
+    pub water_extra: Option<u32>,
     pub id: u32,
     pub unk0: f32,
 }
@@ -80,7 +80,7 @@ impl RoomObjectEntry {
                 le_u32,
                 le_f32,
             )),
-            |(name, path, position, rotation, scale, (flag, waterExtra), id, unk0)| {
+            |(name, path, position, rotation, scale, (flag, water_extra), id, unk0)| {
                 RoomObjectEntry {
                     name,
                     path,
@@ -88,7 +88,7 @@ impl RoomObjectEntry {
                     rotation,
                     scale,
                     flag,
-                    waterExtra,
+                    water_extra,
                     id,
                     unk0,
                 }

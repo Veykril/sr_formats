@@ -134,7 +134,8 @@ where
     S: Fn(&'a [u8]) -> IResult<&'a [u8], R, E>,
     R: ToUsize,
 {
-    flat_map(&count_fn, |c| count(&parse_fn, c.to_usize()))
+    // the outer move closure moves count_fn into it, keeping it alive long enough to be used by the flat_map closure
+    move |input: &[u8]| flat_map(&count_fn, |c| count(&parse_fn, c.to_usize()))(input)
 }
 
 /// Reads a u32 and then runs `parse_fn` that many times.
