@@ -19,8 +19,7 @@ pub struct MapObject {
 }
 
 impl MapObject {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((le_u32, vector3_f32, le_u16, le_f32, le_u32, le_u16, le_u16)),
             |data| MapObject {
@@ -32,7 +31,7 @@ impl MapObject {
                 scale: data.5,
                 region: data.6,
             },
-        )
+        )(i)
     }
 }
 
@@ -41,11 +40,10 @@ pub struct MapObjectGroup {
 }
 
 impl MapObjectGroup {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
-        map(parse_objects_u16(MapObject::parser()), |entries| {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+        map(parse_objects_u16(MapObject::parse), |entries| {
             MapObjectGroup { entries }
-        })
+        })(i)
     }
 }
 
@@ -56,7 +54,7 @@ pub struct JmxMapObject {
 impl JmxMapObject {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
-            preceded(tag(b"JMXVMAPO1001"), count(MapObjectGroup::parser(), 144)),
+            preceded(tag(b"JMXVMAPO1001"), count(MapObjectGroup::parse, 144)),
             |objects| JmxMapObject { objects },
         )(i)
         .map(|(_, this)| this)

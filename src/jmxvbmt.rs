@@ -53,53 +53,50 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
-        |i| {
-            map(
-                tuple((
-                    sized_string,
-                    vector4_f32,
-                    vector4_f32,
-                    vector4_f32,
-                    vector4_f32,
-                    le_f32,
-                    map(le_u32, |flags| {
-                        MaterialFlags::from_bits(flags).unwrap_or_else(|| {
-                            panic!("Unknown MaterialFlags encountered 0b{:b}", flags)
-                        })
-                    }),
-                    sized_path,
-                    le_f32,
-                    le_u16,
-                    map(le_u8, |b| b != 0),
-                )),
-                |data| Material {
-                    name: data.0,
-                    diffuse: data.1,
-                    ambient: data.2,
-                    specular: data.3,
-                    emissive: data.4,
-                    specular_power: data.5,
-                    material_flags: data.6,
-                    diffuse_map: data.7,
-                    unk0: data.8,
-                    unk1: data.9,
-                    absolute_diffuse_map_path: data.10,
-                    normal_map: None,
-                },
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+        map(
+            tuple((
+                sized_string,
+                vector4_f32,
+                vector4_f32,
+                vector4_f32,
+                vector4_f32,
+                le_f32,
+                map(le_u32, |flags| {
+                    MaterialFlags::from_bits(flags).unwrap_or_else(|| {
+                        panic!("Unknown MaterialFlags encountered 0b{:b}", flags)
+                    })
+                }),
+                sized_path,
+                le_f32,
+                le_u16,
+                map(le_u8, |b| b != 0),
+            )),
+            |data| Material {
+                name: data.0,
+                diffuse: data.1,
+                ambient: data.2,
+                specular: data.3,
+                emissive: data.4,
+                specular_power: data.5,
+                material_flags: data.6,
+                diffuse_map: data.7,
+                unk0: data.8,
+                unk1: data.9,
+                absolute_diffuse_map_path: data.10,
+                normal_map: None,
+            },
+        )(i)
+        .and_then(|(i, mut mat)| {
+            cond(
+                mat.material_flags.contains(MaterialFlags::HAS_NORMAL_MAP),
+                pair(sized_string, le_u32),
             )(i)
-            .and_then(|(i, mut mat)| {
-                cond(
-                    mat.material_flags.contains(MaterialFlags::HAS_NORMAL_MAP),
-                    pair(sized_string, le_u32),
-                )(i)
-                .map(|(i, normal_map)| {
-                    mat.normal_map = normal_map;
-                    (i, mat)
-                })
+            .map(|(i, normal_map)| {
+                mat.normal_map = normal_map;
+                (i, mat)
             })
-        }
+        })
     }
 }
 
@@ -110,7 +107,7 @@ pub struct JmxMat(pub Vec<Material>);
 impl JmxMat {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
-            preceded(tag(b"JMXVBMT 0102"), parse_objects_u32(Material::parser())),
+            preceded(tag(b"JMXVBMT 0102"), parse_objects_u32(Material::parse)),
             JmxMat,
         )(i)
         .map(|r| r.1)

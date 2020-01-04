@@ -47,8 +47,7 @@ pub struct NavEntry {
 }
 
 impl NavEntry {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 le_u32,
@@ -79,7 +78,7 @@ impl NavEntry {
                 region_id: data.7,
                 mount_points: data.8,
             },
-        )
+        )(i)
     }
 }
 
@@ -92,8 +91,7 @@ pub struct NavCell {
 }
 
 impl NavCell {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((vector2_f32, vector2_f32, parse_objects_u8(le_u16))),
             |data| NavCell {
@@ -101,7 +99,7 @@ impl NavCell {
                 max: data.1,
                 entries: data.2,
             },
-        )
+        )(i)
     }
 }
 
@@ -120,8 +118,7 @@ pub struct NavRegionLink {
 }
 
 impl NavRegionLink {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 vector2_f32,
@@ -145,7 +142,7 @@ impl NavRegionLink {
                 region_source: data.6,
                 region_destination: data.7,
             },
-        )
+        )(i)
     }
 }
 
@@ -162,8 +159,7 @@ pub struct NavCellLink {
 }
 
 impl NavCellLink {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 vector2_f32,
@@ -183,7 +179,7 @@ impl NavCellLink {
                 cell_source: data.5,
                 cell_destination: data.6,
             },
-        )
+        )(i)
     }
 }
 
@@ -205,12 +201,10 @@ impl JmxNvm {
             preceded(
                 tag(b"JMXVNVM 1000"),
                 tuple((
-                    parse_objects_u16(NavEntry::parser()),
-                    flat_map(le_u32, |c| {
-                        pair(le_u32, count(NavCell::parser(), c as usize))
-                    }),
-                    parse_objects_u32(NavRegionLink::parser()),
-                    parse_objects_u32(NavCellLink::parser()),
+                    parse_objects_u16(NavEntry::parse),
+                    flat_map(le_u32, |c| pair(le_u32, count(NavCell::parse, c as usize))),
+                    parse_objects_u32(NavRegionLink::parse),
+                    parse_objects_u32(NavCellLink::parse),
                     map(
                         count(tuple((le_u16, le_u16, le_u16, le_u16)), 96 * 96),
                         Vec::into_boxed_slice,

@@ -55,8 +55,7 @@ pub struct EnvironmentGroup {
 }
 
 impl EnvironmentGroup {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 sized_string,
@@ -66,7 +65,7 @@ impl EnvironmentGroup {
                 le_u16,
                 le_u16,
                 le_u16,
-                parse_objects_u32(EnvironmentGroupEntry::parser()),
+                parse_objects_u32(EnvironmentGroupEntry::parse),
             )),
             |(name, unk0, unk1, unk2, unk3, unk4, unk5, entries)| EnvironmentGroup {
                 name,
@@ -78,7 +77,7 @@ impl EnvironmentGroup {
                 unk5,
                 entries,
             },
-        )
+        )(i)
     }
 }
 
@@ -95,8 +94,7 @@ pub struct EnvironmentGroupEntry {
 }
 
 impl EnvironmentGroupEntry {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 sized_string,
@@ -120,7 +118,7 @@ impl EnvironmentGroupEntry {
                 unk6,
                 unk7,
             },
-        )
+        )(i)
     }
 }
 
@@ -133,8 +131,7 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 le_u16,
@@ -150,7 +147,7 @@ impl Environment {
                 unk1,
                 fncs,
             },
-        )
+        )(i)
     }
 }
 
@@ -167,9 +164,9 @@ impl JmxEnvironment {
                 tag(b"JMXVENVI1003"),
                 pair(
                     flat_map(le_u32, |c| {
-                        pair(le_u16, count(Environment::parser(), c as usize))
+                        pair(le_u16, count(Environment::parse, c as usize))
                     }),
-                    parse_objects_u32(EnvironmentGroup::parser()),
+                    parse_objects_u32(EnvironmentGroup::parse),
                 ),
             ),
             |((unk0, environments), environment_groups)| JmxEnvironment {

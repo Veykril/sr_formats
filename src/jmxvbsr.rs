@@ -26,8 +26,7 @@ pub struct BoundingBox {
 }
 
 impl BoundingBox {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 sized_string,
@@ -41,7 +40,7 @@ impl BoundingBox {
                 bounding_box1: data.2,
                 extra_bounding_data: data.3.unwrap_or_default(),
             },
-        )
+        )(i)
     }
 }
 
@@ -53,12 +52,11 @@ pub struct MaterialDescriptor {
 }
 
 impl MaterialDescriptor {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(pair(le_u32, sized_path), |(id, path)| MaterialDescriptor {
             id,
             path,
-        })
+        })(i)
     }
 }
 
@@ -71,12 +69,11 @@ pub struct Animation {
 }
 
 impl Animation {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((le_u32, le_u32, parse_objects_u32(sized_path))),
             |(unk0, unk1, paths)| Animation { unk0, unk1, paths },
-        )
+        )(i)
     }
 }
 
@@ -88,12 +85,11 @@ pub struct MeshGroup {
 }
 
 impl MeshGroup {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             pair(sized_string, parse_objects_u32(le_u32)),
             |(name, file_indices)| MeshGroup { name, file_indices },
-        )
+        )(i)
     }
 }
 
@@ -107,8 +103,7 @@ pub struct AnimationEvent {
 }
 
 impl AnimationEvent {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((le_u32, le_u32, le_u32, le_u32)),
             |(key_time, typ, unk0, unk1)| AnimationEvent {
@@ -117,7 +112,7 @@ impl AnimationEvent {
                 unk0,
                 unk1,
             },
-        )
+        )(i)
     }
 }
 
@@ -132,13 +127,12 @@ pub struct AnimationGroupEntry {
 }
 
 impl AnimationGroupEntry {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 ResourceAnimationType::parse,
                 le_u32,
-                parse_objects_u32(AnimationEvent::parser()),
+                parse_objects_u32(AnimationEvent::parse),
                 flat_map(le_u32, |c| pair(le_f32, count(vector2_f32, c as usize))),
             )),
             |(typ, file_index, events, (walk_length, walk_graph))| AnimationGroupEntry {
@@ -148,7 +142,7 @@ impl AnimationGroupEntry {
                 walk_length,
                 walk_graph,
             },
-        )
+        )(i)
     }
 }
 
@@ -160,15 +154,11 @@ pub struct AnimationGroup {
 }
 
 impl AnimationGroup {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
-            pair(
-                sized_string,
-                parse_objects_u32(AnimationGroupEntry::parser()),
-            ),
+            pair(sized_string, parse_objects_u32(AnimationGroupEntry::parse)),
             |(name, animations)| AnimationGroup { name, animations },
-        )
+        )(i)
     }
 }
 
@@ -188,21 +178,20 @@ pub struct JmxRes {
 impl JmxRes {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         let (_, header) = nom::error::context("resource header", JmxResHeader::parse)(i)?;
-        let (_, bounding_box) = BoundingBox::parser()(&i[header.bounding_box_offset as usize..])?;
+        let (_, bounding_box) = BoundingBox::parse(&i[header.bounding_box_offset as usize..])?;
         let (_, material_sets) =
-            parse_objects_u32(MaterialDescriptor::parser())(&i[header.material_offset as usize..])?;
+            parse_objects_u32(MaterialDescriptor::parse)(&i[header.material_offset as usize..])?;
         let (_, mesh_paths) = parse_objects_u32(pair(sized_path, cond(header.unk0 == 1, le_u32)))(
             &i[header.mesh_offset as usize..],
         )?;
-        let (_, animation) = Animation::parser()(&i[header.animation_offset as usize..])?;
+        let (_, animation) = Animation::parse(&i[header.animation_offset as usize..])?;
         let (_, skeleton_paths) = parse_objects_u32(pair(sized_path, parse_objects_u32(le_u8)))(
             &i[header.skeleton_offset as usize..],
         )?;
         let (_, mesh_groups) =
-            parse_objects_u32(MeshGroup::parser())(&i[header.mesh_group_offset as usize..])?;
-        let (_, animation_groups) = parse_objects_u32(AnimationGroup::parser())(
-            &i[header.animation_group_offset as usize..],
-        )?;
+            parse_objects_u32(MeshGroup::parse)(&i[header.mesh_group_offset as usize..])?;
+        let (_, animation_groups) =
+            parse_objects_u32(AnimationGroup::parse)(&i[header.animation_group_offset as usize..])?;
 
         Ok(JmxRes {
             header,

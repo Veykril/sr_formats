@@ -13,13 +13,12 @@ pub struct MapMeshCell {
 }
 
 impl MapMeshCell {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(tuple((le_u32, le_u16, le_u8)), |data| MapMeshCell {
             height: data.0,
             texture: data.1,
             brightness: data.2,
-        })
+        })(i)
     }
 }
 
@@ -36,12 +35,11 @@ pub struct MapBlock {
 }
 
 impl MapBlock {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 string_6,
-                count(MapMeshCell::parser(), 16 * 16 + 1),
+                count(MapMeshCell::parse, 16 * 16 + 1),
                 le_u8,
                 le_u8,
                 le_f32,
@@ -71,7 +69,7 @@ impl MapBlock {
                 height_max,
                 unk0_buffer,
             },
-        )
+        )(i)
     }
 }
 
@@ -92,7 +90,7 @@ pub struct JmxMapMesh {
 impl JmxMapMesh {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         map(
-            preceded(tag(b"JMXVMAPM1000"), count(MapBlock::parser(), 6 * 6)),
+            preceded(tag(b"JMXVMAPM1000"), count(MapBlock::parse, 6 * 6)),
             |blocks| JmxMapMesh { blocks },
         )(i)
         .map(|(_, this)| this)

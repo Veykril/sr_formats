@@ -26,8 +26,7 @@ pub struct Bone {
 }
 
 impl Bone {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>() -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E>
-    {
+    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 le_u8,
@@ -53,7 +52,7 @@ impl Bone {
                 translation_to_unknown: data.8,
                 children: data.9,
             },
-        )
+        )(i)
     }
 }
 
@@ -70,7 +69,7 @@ impl JmxSkeleton {
         map(
             preceded(
                 tag("JMXVBSK 0101"),
-                tuple((parse_objects_u32(Bone::parser()), le_u32, le_u32)),
+                tuple((parse_objects_u32(Bone::parse), le_u32, le_u32)),
             ),
             |data| JmxSkeleton {
                 bones: data.0,

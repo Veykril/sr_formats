@@ -10,7 +10,7 @@ use serde::Serialize;
 
 use std::{convert::TryFrom, path::PathBuf};
 
-use crate::{parse_objects_u32, sized_string, ResourceType};
+use crate::{parse_objects_u32, sized_path, sized_string, ResourceType};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -24,10 +24,9 @@ impl JmxCompound {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
         let (_, header) = JmxCompoundHeader::parse(i)?;
 
-        let path_parser = map(sized_string, From::from);
-        let (_, collision_resource_path) = path_parser(&i[header.collision_resources as usize..])?;
+        let (_, collision_resource_path) = sized_path(&i[header.collision_resources as usize..])?;
         let (_, resource_paths) =
-            parse_objects_u32(path_parser)(&i[header.resource_list as usize..])?;
+            parse_objects_u32(sized_path)(&i[header.resource_list as usize..])?;
 
         Ok(JmxCompound {
             header,
