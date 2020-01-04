@@ -6,8 +6,13 @@ use nom::number::complete::{le_f32, le_u16, le_u32};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 use crate::{count_indexed, parse_objects_u32, sized_string, vector3_f32, Vector3};
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum GraphPoint {
     Float {
         value: f32,
@@ -43,6 +48,8 @@ impl GraphPoint {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct EnvironmentGroup {
     pub name: String,
     pub unk0: u16,
@@ -81,6 +88,8 @@ impl EnvironmentGroup {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct EnvironmentGroupEntry {
     pub name: String,
     pub unk0: u16,
@@ -122,6 +131,8 @@ impl EnvironmentGroupEntry {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Environment {
     pub id: u16,
     pub name: String,
@@ -151,6 +162,8 @@ impl Environment {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxEnvironment {
     pub unk0: u16,
     pub environments: Vec<Environment>,

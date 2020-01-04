@@ -6,6 +6,11 @@ use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MapMeshCell {
     pub height: u32,
     pub texture: u16,
@@ -22,6 +27,8 @@ impl MapMeshCell {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MapBlock {
     pub name: String,
     pub cells: Vec<MapMeshCell>,
@@ -83,6 +90,8 @@ pub fn string_6<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], S
     })(i)
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMapMesh {
     pub blocks: Vec<MapBlock>,
 }

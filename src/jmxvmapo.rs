@@ -6,8 +6,13 @@ use nom::number::complete::{le_f32, le_u16, le_u32};
 use nom::sequence::{preceded, tuple};
 use nom::IResult;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 use crate::{parse_objects_u16, vector3_f32, Vector3};
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MapObject {
     pub id: u32,
     pub position: Vector3<f32>,
@@ -35,6 +40,8 @@ impl MapObject {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MapObjectGroup {
     pub entries: Vec<MapObject>,
 }
@@ -47,6 +54,8 @@ impl MapObjectGroup {
     }
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMapObject {
     pub objects: Vec<MapObjectGroup>,
 }

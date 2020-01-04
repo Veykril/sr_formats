@@ -5,6 +5,9 @@ use nom::number::complete::le_u32;
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 use crate::{parse_objects_u32, sized_string, vector3_f32, vector4_f32, Vector3, Vector4};
 
 #[derive(Debug)]
