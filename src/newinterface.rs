@@ -7,7 +7,7 @@ use nom::IResult;
 use std::path::PathBuf;
 
 use crate::enums::NewInterfaceType;
-use crate::{fixed_string_128, fixed_string_256, fixed_string_64, parse_objects_u32};
+use crate::{fixed_string_128, fixed_string_256, fixed_string_64, flags_u32, parse_objects_u32};
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -19,15 +19,6 @@ bitflags::bitflags! {
         const CENTER = 256;
         const RIGHT = 512;
         const LINECENTER = 65536;
-    }
-}
-
-impl NewInterfaceStyle {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(le_u32, |flags| {
-            NewInterfaceStyle::from_bits(flags)
-                .unwrap_or_else(|| panic!("Unknown NewInterfaceStyle encountered 0b{:b}", flags))
-        })(i)
     }
 }
 
@@ -121,7 +112,7 @@ impl NewInterface {
             ),
         ) = tuple((
             le_u32, le_u32, le_u32, le_u32, le_u32, le_u32, le_u32, le_u32,
-            le_u32, le_u32, le_u32, le_u32, le_u32, NewInterfaceStyle::parse,
+            le_u32, le_u32, le_u32, le_u32, le_u32, flags_u32(NewInterfaceStyle::from_bits),
         ))(i)?;
         Ok((
             i,

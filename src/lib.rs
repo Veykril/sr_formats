@@ -29,6 +29,47 @@ pub mod newinterface;
 pub mod enums;
 pub use enums::*;
 
+pub fn flags<'a, E, F, T, B, BF>(
+    bits_func: BF,
+    from_bits: F,
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], T, E>
+where
+    E: ParseError<&'a [u8]>,
+    F: Fn(B) -> Option<T>,
+    BF: Fn(&'a [u8]) -> IResult<&'a [u8], B, E>,
+{
+    move |i| {
+        let (i, bits) = bits_func(i)?;
+        match from_bits(bits) {
+            Some(flags) => Ok((i, flags)),
+            // TODO: nom doesnt actually have custom error kinds which is kind of a shame
+            None => Err(nom::Err::Error(E::add_context(
+                &[],
+                "unknown bitflags encountered",
+                E::from_error_kind(i, nom::error::ErrorKind::OneOf),
+            ))),
+        }
+    }
+}
+
+#[inline]
+pub fn flags_u16<'a, E, F, T>(from_bits: F) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], T, E>
+where
+    E: ParseError<&'a [u8]>,
+    F: Fn(u16) -> Option<T>,
+{
+    flags(le_u16, from_bits)
+}
+
+#[inline]
+pub fn flags_u32<'a, E, F, T>(from_bits: F) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], T, E>
+where
+    E: ParseError<&'a [u8]>,
+    F: Fn(u32) -> Option<T>,
+{
+    flags(le_u32, from_bits)
+}
+
 /// Reads a u32, then reads the amount of bytes specified by the u32 and parses it as a EUC_KR string encoded string
 #[inline]
 pub fn sized_string<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], String, E> {

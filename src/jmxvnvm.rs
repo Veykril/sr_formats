@@ -11,8 +11,8 @@ use nom::IResult;
 use serde::Serialize;
 
 use crate::{
-    parse_objects_u16, parse_objects_u32, parse_objects_u8, vector2_f32, vector3_f32, Vector2,
-    Vector3,
+    flags_u16, parse_objects_u16, parse_objects_u32, parse_objects_u8, vector2_f32, vector3_f32,
+    Vector2, Vector3,
 };
 
 bitflags! {
@@ -52,18 +52,11 @@ impl NavEntry {
             tuple((
                 le_u32,
                 vector3_f32,
-                map(le_u16, |flag| {
-                    CollisionFlag::from_bits(flag)
-                        .unwrap_or_else(|| panic!("Unknown CollisionFlag encountered 0b{:b}", flag))
-                }),
+                flags_u16(CollisionFlag::from_bits),
                 le_f32,
                 le_u16,
                 le_u16,
-                map(le_u16, |flag| {
-                    EventZoneFlag::from_bits(flag).unwrap_or_else(|| {
-                        panic!("Unknown EventZoneFlags encountered 0b{:b}", flag)
-                    })
-                }),
+                flags_u16(EventZoneFlag::from_bits),
                 le_u16,
                 parse_objects_u16(tuple((le_u8, le_u8, le_u8, le_u8, le_u8, le_u8))),
             )),
@@ -94,11 +87,7 @@ impl NavCell {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((vector2_f32, vector2_f32, parse_objects_u8(le_u16))),
-            |data| NavCell {
-                min: data.0,
-                max: data.1,
-                entries: data.2,
-            },
+            |(min, max, entries)| NavCell { min, max, entries },
         )(i)
     }
 }
@@ -222,6 +211,6 @@ impl JmxNvm {
                 height_map: data.5,
             },
         )(i)
-        .map(|r| r.1)
+        .map(|(_, r)| r)
     }
 }

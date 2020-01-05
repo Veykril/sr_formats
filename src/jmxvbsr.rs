@@ -34,11 +34,11 @@ impl BoundingBox {
                 vector6_f32,
                 flat_map(le_u32, |val| cond(val != 0, count(le_u8, 64))),
             )),
-            |data| BoundingBox {
-                root_mesh: data.0,
-                bounding_box0: data.1,
-                bounding_box1: data.2,
-                extra_bounding_data: data.3.unwrap_or_default(),
+            |(root_mesh, bounding_box0, bounding_box1, extra_bounding_data)| BoundingBox {
+                root_mesh,
+                bounding_box0,
+                bounding_box1,
+                extra_bounding_data: extra_bounding_data.unwrap_or_default(),
             },
         )(i)
     }

@@ -11,7 +11,7 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{parse_objects_u32, sized_path, sized_string, vector4_f32, Vector4};
+use crate::{flags_u32, parse_objects_u32, sized_path, sized_string, vector4_f32, Vector4};
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -62,11 +62,7 @@ impl Material {
                 vector4_f32,
                 vector4_f32,
                 le_f32,
-                map(le_u32, |flags| {
-                    MaterialFlags::from_bits(flags).unwrap_or_else(|| {
-                        panic!("Unknown MaterialFlags encountered 0b{:b}", flags)
-                    })
-                }),
+                flags_u32(MaterialFlags::from_bits),
                 sized_path,
                 le_f32,
                 le_u16,
@@ -110,6 +106,6 @@ impl JmxMat {
             preceded(tag(b"JMXVBMT 0102"), parse_objects_u32(Material::parse)),
             JmxMat,
         )(i)
-        .map(|r| r.1)
+        .map(|(_, r)| r)
     }
 }

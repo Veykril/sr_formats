@@ -11,7 +11,10 @@ use nom::IResult;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::{parse_objects_u32, sized_string, vector2_f32, vector3_f32, Vector2, Vector3};
+use crate::{
+    flags_u32, parse_objects_u32, sized_string, vector2_f32, vector3_f32, vector6_f32, Vector2,
+    Vector3,
+};
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -60,14 +63,14 @@ impl Vertex {
                 le_i32,
                 le_i32,
             )),
-            |data| Vertex {
-                position: data.0,
-                normal: data.1,
-                uv0: data.2,
-                uv1: data.3,
-                float0: data.4,
-                int0: data.5,
-                int1: data.6,
+            |(position, normal, uv0, uv1, float0, int0, int1)| Vertex {
+                position,
+                normal,
+                uv0,
+                uv1,
+                float0,
+                int0,
+                int1,
             },
         )
     }
@@ -87,11 +90,14 @@ pub struct ClothEdge {
 
 impl ClothEdge {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(tuple((le_u32, le_u32, le_f32)), |data| ClothEdge {
-            vertex_index0: data.0,
-            vertex_index1: data.1,
-            max_distance: data.2,
-        })(i)
+        map(
+            tuple((le_u32, le_u32, le_f32)),
+            |(vertex_index0, vertex_index1, max_distance)| ClothEdge {
+                vertex_index0,
+                vertex_index1,
+                max_distance,
+            },
+        )(i)
     }
 }
 
@@ -115,16 +121,16 @@ impl ClothSimParams {
             tuple((
                 le_u32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_u32,
             )),
-            |data| ClothSimParams {
-                unk0: data.0,
-                unk1: data.1,
-                unk2: data.2,
-                unk3: data.3,
-                unk4: data.4,
-                unk5: data.5,
-                unk6: data.6,
-                unk7: data.7,
-                unk8: data.8,
+            |(unk0, unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8)| ClothSimParams {
+                unk0,
+                unk1,
+                unk2,
+                unk3,
+                unk4,
+                unk5,
+                unk6,
+                unk7,
+                unk8,
             },
         )(i)
     }
@@ -154,10 +160,13 @@ pub struct ClothVertex {
 
 impl ClothVertex {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(tuple((le_f32, le_u32)), |data| ClothVertex {
-            max_distance: data.0,
-            is_pinned: data.1 != 0,
-        })(i)
+        map(
+            tuple((le_f32, map(le_u32, |int| int != 0))),
+            |(max_distance, is_pinned)| ClothVertex {
+                max_distance,
+                is_pinned,
+            },
+        )(i)
     }
 }
 
@@ -172,14 +181,15 @@ pub struct BoneIndexData {
 
 impl BoneIndexData {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(tuple((le_u8, le_u16, le_u8, le_u16)), |data| {
-            BoneIndexData {
-                index0: data.0,
-                weight0: data.1,
-                index1: data.2,
-                weight1: data.3,
-            }
-        })(i)
+        map(
+            tuple((le_u8, le_u16, le_u8, le_u16)),
+            |(index0, weight0, index1, weight1)| BoneIndexData {
+                index0,
+                weight0,
+                index1,
+                weight1,
+            },
+        )(i)
     }
 }
 
@@ -225,10 +235,10 @@ impl Gate {
                 parse_objects_u32(vector3_f32),
                 parse_objects_u32(Face::parse),
             )),
-            |data| Gate {
-                name: data.0,
-                vertices: data.1,
-                faces: data.2,
+            |(name, vertices, faces)| Gate {
+                name,
+                vertices,
+                faces,
             },
         )(i)
     }
@@ -260,13 +270,20 @@ impl ObjectLines {
                 le_u8,
                 cond(nav_flag.contains(NavFlags::UNK0), le_u8),
             )),
-            |data| ObjectLines {
-                vertex_source: data.0,
-                vertex_destination: data.1,
-                cell_source: data.2,
-                cell_destination: data.3,
-                collision_flag: data.4,
-                unk: data.5,
+            |(
+                vertex_source,
+                vertex_destination,
+                cell_source,
+                cell_destination,
+                collision_flag,
+                unk,
+            )| ObjectLines {
+                vertex_source,
+                vertex_destination,
+                cell_source,
+                cell_destination,
+                collision_flag,
+                unk,
             },
         )
     }
@@ -314,17 +331,17 @@ impl NavMesh {
                 le_u32,
                 parse_objects_u32(parse_objects_u32(le_u16)),
             )),
-            |data| NavMesh {
-                vertices: data.0,
-                ground: data.1,
-                outlines: data.2,
-                inlines: data.3,
-                event: data.4,
-                unk0: data.5,
-                unk1: data.6,
-                unk2: data.7,
-                unk3: data.8,
-                unk4: data.9,
+            |(vertices, ground, outlines, inlines, event, unk0, unk1, unk2, unk3, unk4)| NavMesh {
+                vertices,
+                ground,
+                outlines,
+                inlines,
+                event,
+                unk0,
+                unk1,
+                unk2,
+                unk3,
+                unk4,
             },
         )
     }
@@ -358,10 +375,7 @@ impl JmxBMesh {
         let (_, cloth_vertex) =
             parse_objects_u32(ClothVertex::parse)(&i[header.cloth_vertex as usize..])?;
         let (_, cloth_edges) = parse_cloth_edges(&i[header.cloth_edge as usize..])?;
-        let (_, bounding_box) = map(
-            tuple((le_f32, le_f32, le_f32, le_f32, le_f32, le_f32)),
-            |data| [data.0, data.1, data.2, data.3, data.4, data.5],
-        )(&i[header.bounding_box as usize..])?;
+        let (_, bounding_box) = vector6_f32(&i[header.bounding_box as usize..])?;
         let (_, gates) = parse_objects_u32(Gate::parse)(&i[header.gate as usize..])?;
         let (_, nav_mesh) = cond(header.nav_mesh != 0, NavMesh::parser(header.nav_flags))(
             &i[header.nav_mesh as usize..],
@@ -422,16 +436,9 @@ impl JmxBMeshHeader {
                     le_u32,
                     le_u32,
                     le_u32,
-                    map(le_u32, |flags| {
-                        NavFlags::from_bits(flags)
-                            .unwrap_or_else(|| panic!("Unknown NavFlags encountered 0b{:b}", flags))
-                    }),
+                    flags_u32(NavFlags::from_bits),
                     le_u32,
-                    map(le_u32, |flags| {
-                        VertexFlags::from_bits(flags).unwrap_or_else(|| {
-                            panic!("Unknown VertexFlags encountered 0b{:b}", flags)
-                        })
-                    }),
+                    flags_u32(VertexFlags::from_bits),
                     le_u32,
                     sized_string,
                     sized_string,

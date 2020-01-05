@@ -71,12 +71,8 @@ impl JmxSkeleton {
                 tag("JMXVBSK 0101"),
                 tuple((parse_objects_u32(Bone::parse), le_u32, le_u32)),
             ),
-            |data| JmxSkeleton {
-                bones: data.0,
-                unk0: data.1,
-                unk1: data.2,
-            },
+            |(bones, unk0, unk1)| JmxSkeleton { bones, unk0, unk1 },
         )(i)
-        .map(|r| r.1)
+        .map(|(_, r)| r)
     }
 }

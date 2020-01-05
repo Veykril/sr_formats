@@ -1,7 +1,7 @@
 use nom::combinator::map;
 use nom::error::ParseError;
-use nom::number::complete::{le_u32, le_u16};
-use nom::sequence::{ tuple};
+use nom::number::complete::{le_u16, le_u32};
+use nom::sequence::tuple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;

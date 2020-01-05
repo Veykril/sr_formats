@@ -26,6 +26,6 @@ impl JmxTexture {
             ),
             |(header_len, data)| JmxTexture { header_len, data },
         )(i)
-        .map(|r| r.1)
+        .map(|(_, r)| r)
     }
 }

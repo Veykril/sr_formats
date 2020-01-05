@@ -32,6 +32,6 @@ impl JmxMapTexture {
                 data,
             },
         )(i)
-        .map(|r| r.1)
+        .map(|(_, r)| r)
     }
 }
