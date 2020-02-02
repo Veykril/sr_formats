@@ -3,15 +3,18 @@ use nom::bytes::complete::tag;
 use nom::combinator::{cond, map};
 use nom::error::ParseError;
 use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
-use nom::sequence::{pair, preceded, tuple};
+use nom::sequence::{pair, preceded};
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{flags_u32, parse_objects_u32, sized_path, sized_string, vector4_f32, Vector4};
+use crate::{
+    flags_u32, parse_objects_u32, sized_path, sized_string, struple, vector4_f32, Vector4,
+};
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -34,7 +37,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Material {
     pub name: String,
@@ -54,36 +57,21 @@ pub struct Material {
 
 impl Material {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                sized_string,
-                vector4_f32,
-                vector4_f32,
-                vector4_f32,
-                vector4_f32,
-                le_f32,
-                flags_u32(MaterialFlags::from_bits),
-                sized_path,
-                le_f32,
-                le_u16,
-                map(le_u8, |b| b != 0),
-            )),
-            |data| Material {
-                name: data.0,
-                diffuse: data.1,
-                ambient: data.2,
-                specular: data.3,
-                emissive: data.4,
-                specular_power: data.5,
-                material_flags: data.6,
-                diffuse_map: data.7,
-                unk0: data.8,
-                unk1: data.9,
-                absolute_diffuse_map_path: data.10,
-                normal_map: None,
-            },
-        )(i)
-        .and_then(|(i, mut mat)| {
+        struple((
+            sized_string,
+            vector4_f32,
+            vector4_f32,
+            vector4_f32,
+            vector4_f32,
+            le_f32,
+            flags_u32(MaterialFlags::from_bits),
+            sized_path,
+            le_f32,
+            le_u16,
+            map(le_u8, |b| b != 0),
+            |i| IResult::Ok((i, None)),
+        ))(i)
+        .and_then(|(i, mut mat): (_, Self)| {
             cond(
                 mat.material_flags.contains(MaterialFlags::HAS_NORMAL_MAP),
                 pair(sized_string, le_u32),

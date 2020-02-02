@@ -3,15 +3,16 @@ use nom::combinator::map;
 use nom::error::ParseError;
 use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32};
-use nom::sequence::{preceded, tuple};
+use nom::sequence::preceded;
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::{parse_objects_u16, vector3_f32, Vector3};
+use crate::{parse_objects_u16, struple, vector3_f32, Vector3};
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MapObject {
     pub id: u32,
@@ -25,18 +26,7 @@ pub struct MapObject {
 
 impl MapObject {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_u32, vector3_f32, le_u16, le_f32, le_u32, le_u16, le_u16)),
-            |data| MapObject {
-                id: data.0,
-                position: data.1,
-                visibility_flag: data.2,
-                theta: data.3,
-                unique_id: data.4,
-                scale: data.5,
-                region: data.6,
-            },
-        )(i)
+        struple((le_u32, vector3_f32, le_u16, le_f32, le_u32, le_u16, le_u16))(i)
     }
 }
 

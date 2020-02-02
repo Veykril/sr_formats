@@ -5,15 +5,16 @@ use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{parse_objects_u32, small_sized_string, vector3_f32, vector6_f32, Vector3};
+use crate::{parse_objects_u32, small_sized_string, struple, vector3_f32, vector6_f32, Vector3};
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectPoint {
     pub name: String,
@@ -28,32 +29,20 @@ pub struct RoomObjectPoint {
 
 impl RoomObjectPoint {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                small_sized_string,
-                vector3_f32,
-                vector3_f32,
-                vector3_f32,
-                vector3_f32,
-                le_f32,
-                le_f32,
-                le_f32,
-            )),
-            |(name, position, rotation, size, rotation2, unk0, unk2, unk1)| RoomObjectPoint {
-                name,
-                position,
-                rotation,
-                size,
-                rotation2,
-                unk0,
-                unk2,
-                unk1,
-            },
-        )(i)
+        struple((
+            small_sized_string,
+            vector3_f32,
+            vector3_f32,
+            vector3_f32,
+            vector3_f32,
+            le_f32,
+            le_f32,
+            le_f32,
+        ))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectEntry {
     pub name: String,
@@ -97,7 +86,7 @@ impl RoomObjectEntry {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectExtraA {
     pub unk0: f32,
@@ -108,19 +97,11 @@ pub struct RoomObjectExtraA {
 
 impl RoomObjectExtraA {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_f32, le_f32, le_f32, le_f32)),
-            |(unk0, unk1, unk2, unk3)| RoomObjectExtraA {
-                unk0,
-                unk1,
-                unk2,
-                unk3,
-            },
-        )(i)
+        struple((le_f32, le_f32, le_f32, le_f32))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectExtraB {
     pub unk0: f32,
@@ -134,18 +115,7 @@ pub struct RoomObjectExtraB {
 
 impl RoomObjectExtraB {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32)),
-            |(unk0, unk1, unk2, unk3, unk4, unk5, unk6)| RoomObjectExtraB {
-                unk0,
-                unk1,
-                unk2,
-                unk3,
-                unk4,
-                unk5,
-                unk6,
-            },
-        )(i)
+        struple((le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32))(i)
     }
 }
 
@@ -255,7 +225,7 @@ impl RoomObject {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ObjectGroup {
     pub name: String,
@@ -265,14 +235,7 @@ pub struct ObjectGroup {
 
 impl ObjectGroup {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((small_sized_string, le_u32, parse_objects_u32(le_u32))),
-            |(name, flag, object_indices)| ObjectGroup {
-                name,
-                flag,
-                object_indices,
-            },
-        )(i)
+        struple((small_sized_string, le_u32, parse_objects_u32(le_u32)))(i)
     }
 }
 
@@ -292,7 +255,7 @@ impl Link {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Links {
     pub unk0: u32,
@@ -303,15 +266,7 @@ pub struct Links {
 
 impl Links {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_u32, le_u32, le_u32, parse_objects_u32(Link::parse))),
-            |(unk0, unk1, unk2, links)| Links {
-                unk0,
-                unk1,
-                unk2,
-                links,
-            },
-        )(i)
+        struple((le_u32, le_u32, le_u32, parse_objects_u32(Link::parse)))(i)
     }
 }
 
@@ -360,7 +315,7 @@ impl JmxDungeon {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxDungeonHeader {
     pub room_objects: u32,
@@ -381,57 +336,24 @@ pub struct JmxDungeonHeader {
 
 impl JmxDungeonHeader {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            preceded(
-                tag(b"JMXVDOF 0101"),
-                tuple((
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u16,
-                    le_u16,
-                    small_sized_string,
-                    le_u32,
-                    le_u32,
-                    le_u16,
-                )),
-            ),
-            |(
-                room_objects,
-                object_connections,
-                links,
-                object_groups,
-                index_names,
-                unk0,
-                unk1,
-                bounding_boxes,
-                unk2,
-                unk3,
-                dungeon_name,
-                unk4,
-                unk5,
-                region_id,
-            )| JmxDungeonHeader {
-                room_objects,
-                object_connections,
-                links,
-                object_groups,
-                index_names,
-                unk0,
-                unk1,
-                bounding_boxes,
-                unk2,
-                unk3,
-                dungeon_name,
-                unk4,
-                unk5,
-                region_id,
-            },
+        preceded(
+            tag(b"JMXVDOF 0101"),
+            struple((
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u16,
+                le_u16,
+                small_sized_string,
+                le_u32,
+                le_u32,
+                le_u16,
+            )),
         )(i)
     }
 }

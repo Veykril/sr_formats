@@ -1,18 +1,19 @@
 use nom::bytes::complete::tag;
-use nom::combinator::{map, map_res};
+use nom::combinator::map_res;
 use nom::error::ParseError;
 use nom::number::complete::le_u32;
-use nom::sequence::{preceded, tuple};
+use nom::sequence::preceded;
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
 use std::{convert::TryFrom, path::PathBuf};
 
-use crate::{parse_objects_u32, sized_path, sized_string, ResourceType};
+use crate::{parse_objects_u32, sized_path, sized_string, struple, ResourceType};
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxCompound {
     pub header: JmxCompoundHeader,
@@ -36,7 +37,7 @@ impl JmxCompound {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxCompoundHeader {
     pub collision_resources: u32,
@@ -54,36 +55,21 @@ pub struct JmxCompoundHeader {
 
 impl JmxCompoundHeader {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            preceded(
-                tag(b"JMXVCPD 0101"),
-                tuple((
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    map_res(le_u32, TryFrom::try_from),
-                    sized_string,
-                    le_u32,
-                    le_u32,
-                )),
-            ),
-            |data| JmxCompoundHeader {
-                collision_resources: data.0,
-                resource_list: data.1,
-                unk0: data.2,
-                unk1: data.3,
-                unk2: data.4,
-                unk3: data.5,
-                unk4: data.6,
-                typ: data.7,
-                name: data.8,
-                unk5: data.9,
-                unk6: data.10,
-            },
+        preceded(
+            tag(b"JMXVCPD 0101"),
+            struple((
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                map_res(le_u32, TryFrom::try_from),
+                sized_string,
+                le_u32,
+                le_u32,
+            )),
         )(i)
     }
 }

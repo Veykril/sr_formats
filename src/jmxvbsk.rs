@@ -1,16 +1,16 @@
 use nom::bytes::complete::tag;
-use nom::combinator::map;
 use nom::error::ParseError;
 use nom::number::complete::{le_u32, le_u8};
-use nom::sequence::{preceded, tuple};
+use nom::sequence::preceded;
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::{parse_objects_u32, sized_string, vector3_f32, vector4_f32, Vector3, Vector4};
+use crate::{parse_objects_u32, sized_string, struple, vector3_f32, vector4_f32, Vector3, Vector4};
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Bone {
     pub unk: u8,
@@ -27,36 +27,22 @@ pub struct Bone {
 
 impl Bone {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                le_u8,
-                sized_string,
-                sized_string,
-                vector4_f32,
-                vector3_f32,
-                vector4_f32,
-                vector3_f32,
-                vector4_f32,
-                vector3_f32,
-                parse_objects_u32(sized_string),
-            )),
-            |data| Bone {
-                unk: data.0,
-                name: data.1,
-                parent_name: data.2,
-                rotation_to_parent: data.3,
-                translation_to_parent: data.4,
-                rotation_to_origin: data.5,
-                translation_to_origin: data.6,
-                rotation_to_unknown: data.7,
-                translation_to_unknown: data.8,
-                children: data.9,
-            },
-        )(i)
+        struple((
+            le_u8,
+            sized_string,
+            sized_string,
+            vector4_f32,
+            vector3_f32,
+            vector4_f32,
+            vector3_f32,
+            vector4_f32,
+            vector3_f32,
+            parse_objects_u32(sized_string),
+        ))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxSkeleton {
     pub bones: Vec<Bone>,
@@ -66,12 +52,9 @@ pub struct JmxSkeleton {
 
 impl JmxSkeleton {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
-        map(
-            preceded(
-                tag("JMXVBSK 0101"),
-                tuple((parse_objects_u32(Bone::parse), le_u32, le_u32)),
-            ),
-            |(bones, unk0, unk1)| JmxSkeleton { bones, unk0, unk1 },
+        preceded(
+            tag("JMXVBSK 0101"),
+            struple((parse_objects_u32(Bone::parse), le_u32, le_u32)),
         )(i)
         .map(|(_, r)| r)
     }

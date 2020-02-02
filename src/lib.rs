@@ -29,6 +29,27 @@ pub mod newinterface;
 pub mod enums;
 pub use enums::*;
 
+pub fn struple_map<I, O1, O2, E, F>(first: F) -> impl Fn(I) -> IResult<I, O2, E>
+where
+    O1: struple::GenericTuple,
+    O2: struple::Struple<Tuple = O1>,
+    E: ParseError<I>,
+    F: Fn(I) -> IResult<I, O1, E>,
+{
+    map(first, struple::Struple::from_tuple)
+}
+
+pub fn struple<I, O1, O2, E, List>(l: List) -> impl Fn(I) -> IResult<I, O2, E>
+where
+    I: Clone,
+    O1: struple::GenericTuple,
+    O2: struple::Struple<Tuple = O1>,
+    E: ParseError<I>,
+    List: nom::sequence::Tuple<I, O1, E>,
+{
+    struple_map(move |i: I| l.parse(i))
+}
+
 pub fn flags<'a, E, F, T, B, BF>(
     bits_func: BF,
     from_bits: F,

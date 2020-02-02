@@ -3,13 +3,16 @@ use nom::combinator::map;
 use nom::error::ParseError;
 use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
-use nom::sequence::{preceded, tuple};
+use nom::sequence::preceded;
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-#[derive(Debug)]
+use crate::struple;
+
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MapMeshCell {
     pub height: u32,
@@ -19,15 +22,11 @@ pub struct MapMeshCell {
 
 impl MapMeshCell {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(tuple((le_u32, le_u16, le_u8)), |data| MapMeshCell {
-            height: data.0,
-            texture: data.1,
-            brightness: data.2,
-        })(i)
+        struple((le_u32, le_u16, le_u8))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MapBlock {
     pub name: String,
@@ -43,40 +42,17 @@ pub struct MapBlock {
 
 impl MapBlock {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                string_6,
-                count(MapMeshCell::parse, 16 * 16 + 1),
-                le_u8,
-                le_u8,
-                le_f32,
-                count(le_u8, 256),
-                le_f32,
-                le_f32,
-                count(le_u8, 20),
-            )),
-            |(
-                name,
-                cells,
-                density,
-                unk0,
-                sea_level,
-                extra_data,
-                height_min,
-                height_max,
-                unk0_buffer,
-            )| MapBlock {
-                name,
-                cells,
-                density,
-                unk0,
-                sea_level,
-                extra_data,
-                height_min,
-                height_max,
-                unk0_buffer,
-            },
-        )(i)
+        struple((
+            string_6,
+            count(MapMeshCell::parse, 16 * 16 + 1),
+            le_u8,
+            le_u8,
+            le_f32,
+            count(le_u8, 256),
+            le_f32,
+            le_f32,
+            count(le_u8, 20),
+        ))(i)
     }
 }
 

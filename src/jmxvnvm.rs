@@ -6,13 +6,14 @@ use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
 use crate::{
-    flags_u16, parse_objects_u16, parse_objects_u32, parse_objects_u8, vector2_f32, vector3_f32,
-    Vector2, Vector3,
+    flags_u16, parse_objects_u16, parse_objects_u32, parse_objects_u8, struple, vector2_f32,
+    vector3_f32, Vector2, Vector3,
 };
 
 bitflags! {
@@ -32,7 +33,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavEntry {
     pub id: u32,
@@ -48,34 +49,21 @@ pub struct NavEntry {
 
 impl NavEntry {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                le_u32,
-                vector3_f32,
-                flags_u16(CollisionFlag::from_bits),
-                le_f32,
-                le_u16,
-                le_u16,
-                flags_u16(EventZoneFlag::from_bits),
-                le_u16,
-                parse_objects_u16(tuple((le_u8, le_u8, le_u8, le_u8, le_u8, le_u8))),
-            )),
-            |data| NavEntry {
-                id: data.0,
-                position: data.1,
-                collision_flag: data.2,
-                yaw: data.3,
-                unique_id: data.4,
-                scale: data.5,
-                event_zone_flag: data.6,
-                region_id: data.7,
-                mount_points: data.8,
-            },
-        )(i)
+        struple((
+            le_u32,
+            vector3_f32,
+            flags_u16(CollisionFlag::from_bits),
+            le_f32,
+            le_u16,
+            le_u16,
+            flags_u16(EventZoneFlag::from_bits),
+            le_u16,
+            parse_objects_u16(tuple((le_u8, le_u8, le_u8, le_u8, le_u8, le_u8))),
+        ))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavCell {
     pub min: Vector2<f32>,
@@ -85,14 +73,11 @@ pub struct NavCell {
 
 impl NavCell {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((vector2_f32, vector2_f32, parse_objects_u8(le_u16))),
-            |(min, max, entries)| NavCell { min, max, entries },
-        )(i)
+        struple((vector2_f32, vector2_f32, parse_objects_u8(le_u16)))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavRegionLink {
     pub min: Vector2<f32>,
@@ -108,34 +93,21 @@ pub struct NavRegionLink {
 
 impl NavRegionLink {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                vector2_f32,
-                vector2_f32,
-                le_u8,
-                le_u8,
-                le_u8,
-                le_u16,
-                le_u16,
-                le_u16,
-                le_u16,
-            )),
-            |data| NavRegionLink {
-                min: data.0,
-                max: data.1,
-                line_flag: data.2,
-                line_source: data.3,
-                line_destination: data.4,
-                cell_source: data.5,
-                cell_destination: data.6,
-                region_source: data.6,
-                region_destination: data.7,
-            },
-        )(i)
+        struple((
+            vector2_f32,
+            vector2_f32,
+            le_u8,
+            le_u8,
+            le_u8,
+            le_u16,
+            le_u16,
+            le_u16,
+            le_u16,
+        ))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavCellLink {
     pub min: Vector2<f32>,
@@ -149,30 +121,19 @@ pub struct NavCellLink {
 
 impl NavCellLink {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                vector2_f32,
-                vector2_f32,
-                le_u8,
-                le_u8,
-                le_u8,
-                le_u16,
-                le_u16,
-            )),
-            |data| NavCellLink {
-                min: data.0,
-                max: data.1,
-                line_flag: data.2,
-                line_source: data.3,
-                line_destination: data.4,
-                cell_source: data.5,
-                cell_destination: data.6,
-            },
-        )(i)
+        struple((
+            vector2_f32,
+            vector2_f32,
+            le_u8,
+            le_u8,
+            le_u8,
+            le_u16,
+            le_u16,
+        ))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxNvm {
     pub nav_entries: Vec<NavEntry>,

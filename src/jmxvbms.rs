@@ -7,13 +7,14 @@ use nom::multi::count;
 use nom::number::complete::{le_f32, le_i32, le_u16, le_u32, le_u8};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
 use crate::{
-    flags_u32, parse_objects_u32, sized_string, vector2_f32, vector3_f32, vector6_f32, Vector2,
-    Vector3,
+    flags_u32, parse_objects_u32, sized_string, struple, vector2_f32, vector3_f32, vector6_f32,
+    Vector2, Vector3,
 };
 
 bitflags! {
@@ -37,7 +38,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Vertex {
     pub position: Vector3<f32>,
@@ -53,26 +54,15 @@ impl Vertex {
     fn parser<'a, E: ParseError<&'a [u8]>>(
         light_map: bool,
     ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                vector3_f32,
-                vector3_f32,
-                vector2_f32,
-                cond(light_map, vector2_f32),
-                le_f32,
-                le_i32,
-                le_i32,
-            )),
-            |(position, normal, uv0, uv1, float0, int0, int1)| Vertex {
-                position,
-                normal,
-                uv0,
-                uv1,
-                float0,
-                int0,
-                int1,
-            },
-        )
+        struple((
+            vector3_f32,
+            vector3_f32,
+            vector2_f32,
+            cond(light_map, vector2_f32),
+            le_f32,
+            le_i32,
+            le_i32,
+        ))
     }
 }
 
@@ -80,7 +70,7 @@ impl Vertex {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Unknown(pub f32, pub u32);
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothEdge {
     pub vertex_index0: u32,
@@ -90,18 +80,11 @@ pub struct ClothEdge {
 
 impl ClothEdge {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_u32, le_u32, le_f32)),
-            |(vertex_index0, vertex_index1, max_distance)| ClothEdge {
-                vertex_index0,
-                vertex_index1,
-                max_distance,
-            },
-        )(i)
+        struple((le_u32, le_u32, le_f32))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothSimParams {
     pub unk0: u32,
@@ -117,22 +100,9 @@ pub struct ClothSimParams {
 
 impl ClothSimParams {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                le_u32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_u32,
-            )),
-            |(unk0, unk1, unk2, unk3, unk4, unk5, unk6, unk7, unk8)| ClothSimParams {
-                unk0,
-                unk1,
-                unk2,
-                unk3,
-                unk4,
-                unk5,
-                unk6,
-                unk7,
-                unk8,
-            },
-        )(i)
+        struple((
+            le_u32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_u32,
+        ))(i)
     }
 }
 
@@ -151,7 +121,7 @@ fn parse_cloth_edges<'a, E: ParseError<&'a [u8]>>(
     })(i)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothVertex {
     pub max_distance: f32,
@@ -160,17 +130,11 @@ pub struct ClothVertex {
 
 impl ClothVertex {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_f32, map(le_u32, |int| int != 0))),
-            |(max_distance, is_pinned)| ClothVertex {
-                max_distance,
-                is_pinned,
-            },
-        )(i)
+        struple((le_f32, map(le_u32, |int| int != 0)))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BoneIndexData {
     pub index0: u8,
@@ -181,15 +145,7 @@ pub struct BoneIndexData {
 
 impl BoneIndexData {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_u8, le_u16, le_u8, le_u16)),
-            |(index0, weight0, index1, weight1)| BoneIndexData {
-                index0,
-                weight0,
-                index1,
-                weight1,
-            },
-        )(i)
+        struple((le_u8, le_u16, le_u8, le_u16))(i)
     }
 }
 
@@ -219,7 +175,7 @@ impl Face {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Gate {
     pub name: String,
@@ -229,22 +185,15 @@ pub struct Gate {
 
 impl Gate {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                sized_string,
-                parse_objects_u32(vector3_f32),
-                parse_objects_u32(Face::parse),
-            )),
-            |(name, vertices, faces)| Gate {
-                name,
-                vertices,
-                faces,
-            },
-        )(i)
+        struple((
+            sized_string,
+            parse_objects_u32(vector3_f32),
+            parse_objects_u32(Face::parse),
+        ))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ObjectLines {
     pub vertex_source: u16,
@@ -261,35 +210,18 @@ impl ObjectLines {
     pub fn parser<'a, E: ParseError<&'a [u8]>>(
         nav_flag: NavFlags,
     ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                le_u16,
-                le_u16,
-                le_u16,
-                le_u16,
-                le_u8,
-                cond(nav_flag.contains(NavFlags::UNK0), le_u8),
-            )),
-            |(
-                vertex_source,
-                vertex_destination,
-                cell_source,
-                cell_destination,
-                collision_flag,
-                unk,
-            )| ObjectLines {
-                vertex_source,
-                vertex_destination,
-                cell_source,
-                cell_destination,
-                collision_flag,
-                unk,
-            },
-        )
+        struple((
+            le_u16,
+            le_u16,
+            le_u16,
+            le_u16,
+            le_u8,
+            cond(nav_flag.contains(NavFlags::UNK0), le_u8),
+        ))
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavMesh {
     pub vertices: Vec<(Vector3<f32>, u8)>,
@@ -308,42 +240,28 @@ impl NavMesh {
     pub fn parser<'a, E: ParseError<&'a [u8]>>(
         nav_flag: NavFlags,
     ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                parse_objects_u32(pair(vector3_f32, le_u8)),
-                parse_objects_u32(tuple((
-                    Face::parse,
-                    le_u16,
-                    cond(nav_flag.contains(NavFlags::UNK1), le_u8),
-                ))),
-                parse_objects_u32(ObjectLines::parser(nav_flag)),
-                parse_objects_u32(ObjectLines::parser(nav_flag)),
-                map(
-                    cond(
-                        nav_flag.contains(NavFlags::UNK2),
-                        parse_objects_u32(sized_string),
-                    ),
-                    Option::unwrap_or_default,
+        struple((
+            parse_objects_u32(pair(vector3_f32, le_u8)),
+            parse_objects_u32(tuple((
+                Face::parse,
+                le_u16,
+                cond(nav_flag.contains(NavFlags::UNK1), le_u8),
+            ))),
+            parse_objects_u32(ObjectLines::parser(nav_flag)),
+            parse_objects_u32(ObjectLines::parser(nav_flag)),
+            map(
+                cond(
+                    nav_flag.contains(NavFlags::UNK2),
+                    parse_objects_u32(sized_string),
                 ),
-                le_f32,
-                le_f32,
-                le_u32,
-                le_u32,
-                parse_objects_u32(parse_objects_u32(le_u16)),
-            )),
-            |(vertices, ground, outlines, inlines, event, unk0, unk1, unk2, unk3, unk4)| NavMesh {
-                vertices,
-                ground,
-                outlines,
-                inlines,
-                event,
-                unk0,
-                unk1,
-                unk2,
-                unk3,
-                unk4,
-            },
-        )
+                Option::unwrap_or_default,
+            ),
+            le_f32,
+            le_f32,
+            le_u32,
+            le_u32,
+            parse_objects_u32(parse_objects_u32(le_u16)),
+        ))
     }
 }
 
@@ -396,7 +314,7 @@ impl JmxBMesh {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxBMeshHeader {
     pub vertex: u32,
@@ -421,50 +339,28 @@ pub struct JmxBMeshHeader {
 
 impl JmxBMeshHeader {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            preceded(
-                alt((tag(b"JMXVBMS 0109"), tag(b"JMXVBMS 0110"))),
-                tuple((
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    flags_u32(NavFlags::from_bits),
-                    le_u32,
-                    flags_u32(VertexFlags::from_bits),
-                    le_u32,
-                    sized_string,
-                    sized_string,
-                    le_u32,
-                )),
-            ),
-            |data| JmxBMeshHeader {
-                vertex: data.0,
-                skin: data.1,
-                face: data.2,
-                cloth_vertex: data.3,
-                cloth_edge: data.4,
-                bounding_box: data.5,
-                gate: data.6,
-                nav_mesh: data.7,
-                unk0: data.8,
-                unk1: data.9,
-                unk3: data.10,
-                nav_flags: data.11,
-                sub_prim_count: data.12,
-                vertex_flags: data.13,
-                unk4: data.14,
-                name: data.15,
-                material: data.16,
-                unk5: data.17,
-            },
+        preceded(
+            alt((tag(b"JMXVBMS 0109"), tag(b"JMXVBMS 0110"))),
+            struple((
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                flags_u32(NavFlags::from_bits),
+                le_u32,
+                flags_u32(VertexFlags::from_bits),
+                le_u32,
+                sized_string,
+                sized_string,
+                le_u32,
+            )),
         )(i)
     }
 }

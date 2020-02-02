@@ -1,14 +1,17 @@
 use nom::bytes::complete::tag;
-use nom::combinator::{flat_map, map};
+use nom::combinator::flat_map;
 use nom::error::ParseError;
 use nom::multi::count;
 use nom::number::complete::{le_u32, le_u8};
 use nom::sequence::{pair, preceded};
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-#[derive(Debug)]
+use crate::struple_map;
+
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxTexture {
     pub header_len: u32,
@@ -17,15 +20,12 @@ pub struct JmxTexture {
 
 impl JmxTexture {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
-        map(
-            preceded(
-                tag(b"JMXVDDJ 1000"),
-                flat_map(le_u32, |texture_size| {
-                    pair(le_u32, count(le_u8, texture_size as usize - 8))
-                }),
-            ),
-            |(header_len, data)| JmxTexture { header_len, data },
-        )(i)
+        struple_map(preceded(
+            tag(b"JMXVDDJ 1000"),
+            flat_map(le_u32, |texture_size| {
+                pair(le_u32, count(le_u8, texture_size as usize - 8))
+            }),
+        ))(i)
         .map(|(_, r)| r)
     }
 }

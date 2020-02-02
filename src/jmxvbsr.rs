@@ -5,6 +5,7 @@ use nom::multi::count;
 use nom::number::complete::{le_f32, le_u32, le_u8};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
+use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -12,11 +13,11 @@ use serde::Serialize;
 use std::path::PathBuf;
 
 use crate::{
-    parse_objects_u32, sized_path, sized_string, vector2_f32, vector6_f32, ResourceAnimationType,
-    ResourceType, Vector2,
+    parse_objects_u32, sized_path, sized_string, struple, struple_map, vector2_f32, vector6_f32,
+    ResourceAnimationType, ResourceType, Vector2,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BoundingBox {
     pub root_mesh: String,
@@ -27,24 +28,19 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((
-                sized_string,
-                vector6_f32,
-                vector6_f32,
+        struple((
+            sized_string,
+            vector6_f32,
+            vector6_f32,
+            map(
                 flat_map(le_u32, |val| cond(val != 0, count(le_u8, 64))),
-            )),
-            |(root_mesh, bounding_box0, bounding_box1, extra_bounding_data)| BoundingBox {
-                root_mesh,
-                bounding_box0,
-                bounding_box1,
-                extra_bounding_data: extra_bounding_data.unwrap_or_default(),
-            },
-        )(i)
+                |ebd| ebd.unwrap_or_default(),
+            ),
+        ))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MaterialDescriptor {
     pub id: u32,
@@ -53,14 +49,11 @@ pub struct MaterialDescriptor {
 
 impl MaterialDescriptor {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(pair(le_u32, sized_path), |(id, path)| MaterialDescriptor {
-            id,
-            path,
-        })(i)
+        struple_map(pair(le_u32, sized_path))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Animation {
     pub unk0: u32,
@@ -70,14 +63,11 @@ pub struct Animation {
 
 impl Animation {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_u32, le_u32, parse_objects_u32(sized_path))),
-            |(unk0, unk1, paths)| Animation { unk0, unk1, paths },
-        )(i)
+        struple((le_u32, le_u32, parse_objects_u32(sized_path)))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MeshGroup {
     pub name: String,
@@ -86,14 +76,11 @@ pub struct MeshGroup {
 
 impl MeshGroup {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            pair(sized_string, parse_objects_u32(le_u32)),
-            |(name, file_indices)| MeshGroup { name, file_indices },
-        )(i)
+        struple_map(pair(sized_string, parse_objects_u32(le_u32)))(i)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AnimationEvent {
     pub key_time: u32,
@@ -104,15 +91,7 @@ pub struct AnimationEvent {
 
 impl AnimationEvent {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            tuple((le_u32, le_u32, le_u32, le_u32)),
-            |(key_time, typ, unk0, unk1)| AnimationEvent {
-                key_time,
-                typ,
-                unk0,
-                unk1,
-            },
-        )(i)
+        struple((le_u32, le_u32, le_u32, le_u32))(i)
     }
 }
 
@@ -146,7 +125,7 @@ impl AnimationGroupEntry {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AnimationGroup {
     pub name: String,
@@ -155,10 +134,10 @@ pub struct AnimationGroup {
 
 impl AnimationGroup {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            pair(sized_string, parse_objects_u32(AnimationGroupEntry::parse)),
-            |(name, animations)| AnimationGroup { name, animations },
-        )(i)
+        struple_map(pair(
+            sized_string,
+            parse_objects_u32(AnimationGroupEntry::parse),
+        ))(i)
     }
 }
 
@@ -206,7 +185,7 @@ impl JmxRes {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxResHeader {
     pub material_offset: u32,
@@ -230,45 +209,25 @@ pub struct JmxResHeader {
 
 impl JmxResHeader {
     pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        map(
-            preceded(
-                tag("JMXVRES 0109"),
-                tuple((
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    le_u32,
-                    ResourceType::parse,
-                    sized_string,
-                )),
-            ),
-            |data| JmxResHeader {
-                material_offset: data.0,
-                mesh_offset: data.1,
-                skeleton_offset: data.2,
-                animation_offset: data.3,
-                mesh_group_offset: data.4,
-                animation_group_offset: data.5,
-                sound_effect_offset: data.6,
-                bounding_box_offset: data.7,
-                unk0: data.8,
-                unk1: data.9,
-                unk2: data.10,
-                unk3: data.11,
-                unk4: data.12,
-                res_type: data.13,
-                name: data.14,
-                //unk5: data.15
-            },
+        preceded(
+            tag("JMXVRES 0109"),
+            struple((
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                le_u32,
+                ResourceType::parse,
+                sized_string,
+            )),
         )(i)
     }
 }
