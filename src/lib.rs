@@ -24,6 +24,7 @@ pub mod jmxvmapo;
 pub mod jmxvmapt;
 pub mod jmxvmfo;
 pub mod jmxvnvm;
+pub mod jmxvobji;
 pub mod newinterface;
 
 pub mod enums;
