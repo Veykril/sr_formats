@@ -38,7 +38,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Copy, Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Vertex {
     pub position: Vector3<f32>,
@@ -66,11 +66,11 @@ impl Vertex {
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Unknown(pub f32, pub u32);
 
-#[derive(Debug, Struple)]
+#[derive(Copy, Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothEdge {
     pub vertex_index0: u32,
@@ -84,7 +84,7 @@ impl ClothEdge {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Copy, Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothSimParams {
     pub unk0: u32,
@@ -121,7 +121,7 @@ fn parse_cloth_edges<'a, E: ParseError<&'a [u8]>>(
     })(i)
 }
 
-#[derive(Debug, Struple)]
+#[derive(Copy, Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ClothVertex {
     pub max_distance: f32,
@@ -134,7 +134,7 @@ impl ClothVertex {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Copy, Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BoneIndexData {
     pub index0: u8,
@@ -163,7 +163,7 @@ fn parse_bones<'a, E: ParseError<&'a [u8]>>(
     })
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Face(pub [u16; 3]);
 
@@ -175,7 +175,7 @@ impl Face {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Gate {
     pub name: String,
@@ -193,7 +193,7 @@ impl Gate {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Copy, Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ObjectLines {
     pub vertex_source: u16,
@@ -221,7 +221,7 @@ impl ObjectLines {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavMesh {
     pub vertices: Vec<(Vector3<f32>, u8)>,
@@ -265,7 +265,7 @@ impl NavMesh {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxBMesh {
     pub header: JmxBMeshHeader,
@@ -314,7 +314,7 @@ impl JmxBMesh {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Clone, Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxBMeshHeader {
     pub vertex: u32,
