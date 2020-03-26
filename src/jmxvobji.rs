@@ -12,7 +12,7 @@ use std::str::FromStr;
 
 use crate::{parse_u16_str, parse_u32_hex_str, struple};
 
-pub fn parse_f32_hex_dumped_str<'a, E: ParseError<&'a str>>(
+fn parse_f32_hex_dumped_str<'a, E: ParseError<&'a str>>(
     input: &'a str,
 ) -> IResult<&'a str, f32, E> {
     map(parse_u32_hex_str, |num| {
