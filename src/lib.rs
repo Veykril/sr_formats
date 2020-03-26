@@ -1,10 +1,11 @@
 #![warn(clippy::all)]
-use nom::bytes::complete::take;
-use nom::combinator::{flat_map, map};
+use nom::bytes::complete::{tag, take};
+use nom::character::complete::{digit1, hex_digit1};
+use nom::combinator::{flat_map, map, map_res};
 use nom::error::ParseError;
 use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
-use nom::sequence::tuple;
+use nom::sequence::{preceded, tuple};
 use nom::{IResult, ToUsize};
 
 use std::path::PathBuf;
@@ -49,6 +50,30 @@ where
     List: nom::sequence::Tuple<I, O1, E>,
 {
     struple_map(move |i: I| l.parse(i))
+}
+
+pub fn parse_u32_hex_str<'a, E>(input: &'a str) -> IResult<&'a str, u32, E>
+where
+    E: ParseError<&'a str>,
+{
+    preceded(
+        tag("0x"),
+        map_res(hex_digit1, |s| u32::from_str_radix(s, 16)),
+    )(input)
+}
+
+pub fn parse_u32_str<'a, E>(input: &'a str) -> IResult<&'a str, u32, E>
+where
+    E: ParseError<&'a str>,
+{
+    map_res(digit1, |s| u32::from_str_radix(s, 10))(input)
+}
+
+pub fn parse_u16_str<'a, E>(input: &'a str) -> IResult<&'a str, u16, E>
+where
+    E: ParseError<&'a str>,
+{
+    map_res(digit1, |s| u16::from_str_radix(s, 10))(input)
 }
 
 pub fn flags<'a, E, F, T, B, BF>(
