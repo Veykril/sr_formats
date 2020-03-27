@@ -1,3 +1,4 @@
+use mint::Vector3;
 use nom::bytes::complete::tag;
 use nom::combinator::{flat_map, map};
 use nom::error::ParseError;
@@ -10,7 +11,7 @@ use struple::Struple;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::{count_indexed, parse_objects_u32, sized_string, struple, vector3_f32, Vector3};
+use crate::{count_indexed, parse_objects_u32, sized_string, struple, vector3_f32};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]

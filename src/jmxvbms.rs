@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use mint::{Vector2, Vector3};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::combinator::{cond, flat_map, map};
@@ -14,7 +15,6 @@ use serde::Serialize;
 
 use crate::{
     flags_u32, parse_objects_u32, sized_string, struple, vector2_f32, vector3_f32, vector6_f32,
-    Vector2, Vector3,
 };
 
 bitflags! {

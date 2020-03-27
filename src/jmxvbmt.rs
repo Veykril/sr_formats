@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use mint::Vector4;
 use nom::bytes::complete::tag;
 use nom::combinator::{cond, map};
 use nom::error::ParseError;
@@ -12,9 +13,7 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{
-    flags_u32, parse_objects_u32, sized_path, sized_string, struple, vector4_f32, Vector4,
-};
+use crate::{flags_u32, parse_objects_u32, sized_path, sized_string, struple, vector4_f32};
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]

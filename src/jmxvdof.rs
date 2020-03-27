@@ -1,3 +1,4 @@
+use mint::Vector3;
 use nom::bytes::complete::tag;
 use nom::combinator::{cond, flat_map, map};
 use nom::error::ParseError;
@@ -12,7 +13,7 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{parse_objects_u32, small_sized_string, struple, vector3_f32, vector6_f32, Vector3};
+use crate::{parse_objects_u32, small_sized_string, struple, vector3_f32, vector6_f32};
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]

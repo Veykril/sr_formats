@@ -1,3 +1,4 @@
+use mint::Vector2;
 use nom::bytes::complete::tag;
 use nom::combinator::{cond, flat_map, map};
 use nom::error::ParseError;
@@ -14,7 +15,7 @@ use std::path::PathBuf;
 
 use crate::{
     parse_objects_u32, sized_path, sized_string, struple, struple_map, vector2_f32, vector6_f32,
-    ResourceAnimationType, ResourceType, Vector2,
+    ResourceAnimationType, ResourceType,
 };
 
 #[derive(Debug, Struple)]

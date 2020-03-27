@@ -10,3 +10,4 @@ bitflags = "1"
 encoding_rs = "0.8"
 serde = { version = "1", features = ["derive"], optional = true }
 struple = "0.1"
+mint = "0.5.4"

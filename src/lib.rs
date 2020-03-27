@@ -25,30 +25,6 @@ pub use enums::*;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct Vector2<T> {
-    pub x: T,
-    pub y: T,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct Vector3<T> {
-    pub x: T,
-    pub y: T,
-    pub z: T,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct Vector4<T> {
-    pub x: T,
-    pub y: T,
-    pub z: T,
-    pub w: T,
-}
-
 pub(crate) use self::combinator::*;
 pub(crate) mod combinator {
     use nom::bytes::complete::{tag, take, take_till};
@@ -62,7 +38,7 @@ pub(crate) mod combinator {
 
     use std::path::PathBuf;
 
-    use super::{Vector2, Vector3, Vector4};
+    use mint::{Vector2, Vector3, Vector4};
 
     pub fn struple_map<I, O1, O2, E, F>(first: F) -> impl Fn(I) -> IResult<I, O2, E>
     where
