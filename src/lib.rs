@@ -1,5 +1,6 @@
 #![warn(clippy::all)]
 pub mod gmwpfort;
+pub mod jmxv2dti;
 pub mod jmxvban;
 pub mod jmxvbms;
 pub mod jmxvbmt;
@@ -49,13 +50,13 @@ pub struct Vector4<T> {
 
 pub(crate) use self::combinator::*;
 pub(crate) mod combinator {
-    use nom::bytes::complete::{tag, take};
-    use nom::character::complete::{digit1, hex_digit1};
+    use nom::bytes::complete::{tag, take, take_till};
+    use nom::character::complete::{char, digit1, hex_digit1};
     use nom::combinator::{flat_map, map, map_res};
     use nom::error::ParseError;
     use nom::multi::count;
     use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
-    use nom::sequence::{preceded, tuple};
+    use nom::sequence::{delimited, preceded, tuple};
     use nom::{IResult, ToUsize};
 
     use std::path::PathBuf;
@@ -98,6 +99,20 @@ pub(crate) mod combinator {
         E: ParseError<&'a str>,
     {
         map_res(digit1, |s| u16::from_str_radix(s, 10))(input)
+    }
+
+    pub fn parse_quoted_str<'a, E>(input: &'a str) -> IResult<&'a str, &'a str, E>
+    where
+        E: ParseError<&'a str>,
+    {
+        delimited(char('"'), take_till(|c| c == '"'), char('"'))(input)
+    }
+
+    pub fn parse_quoted_string<'a, E>(input: &'a str) -> IResult<&'a str, String, E>
+    where
+        E: ParseError<&'a str>,
+    {
+        map(parse_quoted_str, From::from)(input)
     }
 
     pub fn flags<'a, E, F, T, B, BF>(
