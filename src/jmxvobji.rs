@@ -1,16 +1,18 @@
-use nom::bytes::complete::{tag, take_till};
-use nom::character::complete::{char, digit1, hex_digit1, line_ending, multispace1};
-use nom::combinator::{flat_map, map, map_res};
+use nom::bytes::complete::tag;
+use nom::character::complete::{line_ending, multispace1};
+use nom::combinator::{flat_map, map};
 use nom::error::ParseError;
 use nom::multi::many_m_n;
-use nom::sequence::{delimited, preceded, terminated};
+use nom::sequence::{preceded, terminated};
 use nom::IResult;
 use struple::Struple;
 
 use std::path::PathBuf;
-use std::str::FromStr;
 
-use crate::{parse_u16_str, parse_u32_hex_str, struple};
+use crate::{
+    parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str, parse_u8_str,
+    struple,
+};
 
 fn parse_f32_hex_dumped_str<'a, E: ParseError<&'a str>>(
     input: &'a str,
@@ -24,8 +26,8 @@ fn parse_f32_hex_dumped_str<'a, E: ParseError<&'a str>>(
 pub struct ObjectStringIfo {
     pub index: u32,
     pub flag: u32,
-    pub x_sec: u16,
-    pub y_sec: u16,
+    pub x_sec: u8,
+    pub y_sec: u8,
     pub x_offset: f32,
     pub y_offset: f32,
     pub z_offset: f32,
@@ -49,19 +51,13 @@ impl ObjectStringIfo {
             struple((
                 parse_u32_hex_str,
                 preceded(multispace1, parse_u32_hex_str),
-                preceded(multispace1, parse_u16_str),
-                preceded(multispace1, parse_u16_str),
+                preceded(multispace1, parse_u8_str),
+                preceded(multispace1, parse_u8_str),
                 preceded(multispace1, parse_f32_hex_dumped_str),
                 preceded(multispace1, parse_f32_hex_dumped_str),
                 preceded(multispace1, parse_f32_hex_dumped_str),
                 preceded(multispace1, parse_f32_hex_dumped_str),
-                preceded(
-                    multispace1,
-                    map(
-                        delimited(char('"'), take_till(|c| c == '"'), char('"')),
-                        From::from,
-                    ),
-                ),
+                preceded(multispace1, parse_quoted_string),
             )),
             line_ending,
         )(i)
@@ -89,21 +85,9 @@ impl ObjectIfo {
     fn parse_single<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Self, E> {
         terminated(
             struple((
-                map_res(digit1, u16::from_str),
-                preceded(
-                    multispace1,
-                    preceded(
-                        tag("0x"),
-                        map_res(hex_digit1, |s| u32::from_str_radix(s, 16)),
-                    ),
-                ),
-                preceded(
-                    multispace1,
-                    map(
-                        delimited(char('"'), take_till(|c| c == '"'), char('"')),
-                        From::from,
-                    ),
-                ),
+                parse_u16_str,
+                preceded(multispace1, parse_u32_hex_str),
+                preceded(multispace1, parse_quoted_path_buf),
             )),
             line_ending,
         )(i)

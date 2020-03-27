@@ -7,14 +7,18 @@ use nom::sequence::{delimited, pair, preceded, terminated};
 use nom::IResult;
 use struple::Struple;
 
-use crate::{parse_quoted_string, parse_u16_str, parse_u32_hex_str, struple};
+use std::path::PathBuf;
+
+use crate::{
+    parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str, struple,
+};
 
 #[derive(Debug, PartialEq, Struple)]
 pub struct TileInfo2D {
     pub index: u16,
     pub flag: u32,
     pub category: String,
-    pub file: String,
+    pub file: PathBuf,
     pub extra: Vec<(u16, u16)>,
 }
 
@@ -35,7 +39,7 @@ impl TileInfo2D {
                 parse_u16_str,
                 preceded(multispace1, parse_u32_hex_str),
                 preceded(multispace1, parse_quoted_string),
-                preceded(multispace1, parse_quoted_string),
+                preceded(multispace1, parse_quoted_path_buf),
                 many0(preceded(
                     multispace1,
                     delimited(

@@ -94,6 +94,13 @@ pub(crate) mod combinator {
         )(input)
     }
 
+    pub fn parse_u8_str<'a, E>(input: &'a str) -> IResult<&'a str, u8, E>
+    where
+        E: ParseError<&'a str>,
+    {
+        map_res(digit1, |s| u8::from_str_radix(s, 10))(input)
+    }
+
     pub fn parse_u16_str<'a, E>(input: &'a str) -> IResult<&'a str, u16, E>
     where
         E: ParseError<&'a str>,
@@ -109,6 +116,13 @@ pub(crate) mod combinator {
     }
 
     pub fn parse_quoted_string<'a, E>(input: &'a str) -> IResult<&'a str, String, E>
+    where
+        E: ParseError<&'a str>,
+    {
+        map(parse_quoted_str, From::from)(input)
+    }
+
+    pub fn parse_quoted_path_buf<'a, E>(input: &'a str) -> IResult<&'a str, PathBuf, E>
     where
         E: ParseError<&'a str>,
     {
