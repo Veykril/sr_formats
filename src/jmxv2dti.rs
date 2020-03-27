@@ -7,18 +7,24 @@ use nom::sequence::{delimited, pair, preceded, terminated};
 use nom::IResult;
 use struple::Struple;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 use std::path::PathBuf;
 
 use crate::{
     parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str, struple,
 };
 
+#[cfg_attr(feature = "serde", derive(Serialize))]
 #[derive(Debug, PartialEq, Struple)]
 pub struct TileInfo2D {
     pub index: u16,
+    // tile sound?
     pub flag: u32,
     pub category: String,
     pub file: PathBuf,
+    // (model index into object.ifo, amount of objects placed)
     pub extra: Vec<(u16, u16)>,
 }
 

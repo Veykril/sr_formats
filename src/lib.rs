@@ -1,4 +1,5 @@
 #![warn(clippy::all)]
+pub mod divisioninfo;
 pub mod gmwpfort;
 pub mod jmxv2dti;
 pub mod jmxvban;

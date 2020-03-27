@@ -7,6 +7,9 @@ use nom::sequence::{preceded, terminated};
 use nom::IResult;
 use struple::Struple;
 
+#[cfg(feature = "serde")]
+use serde::Serialize;
+
 use std::path::PathBuf;
 
 use crate::{
@@ -22,6 +25,7 @@ fn parse_f32_hex_dumped_str<'a, E: ParseError<&'a str>>(
     })(input)
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize))]
 #[derive(Debug, PartialEq, Struple)]
 pub struct ObjectStringIfo {
     pub index: u32,
@@ -64,6 +68,7 @@ impl ObjectStringIfo {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize))]
 #[derive(Debug, PartialEq, Struple)]
 pub struct ObjectIfo {
     pub index: u16,

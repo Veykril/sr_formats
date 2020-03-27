@@ -11,6 +11,53 @@ use std::convert::TryFrom;
 #[repr(u32)]
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
+pub enum TileSound {
+    Dirt = 0,
+    Sand = 1,
+    Ashfield = 2,
+    Stone = 3,
+    Metal = 4,
+    Wood = 5,
+    Mud = 6,
+    Water = 7,
+    DeepWater = 8,
+    Snow = 9,
+    Grass = 10,
+    LongGrass = 11,
+    Forest = 12,
+    Cloud = 13,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct UnknownTileSound(u32);
+
+impl TryFrom<u32> for TileSound {
+    type Error = UnknownTileSound;
+
+    fn try_from(val: u32) -> Result<Self, Self::Error> {
+        match val {
+            0 => Ok(TileSound::Dirt),
+            1 => Ok(TileSound::Sand),
+            2 => Ok(TileSound::Ashfield),
+            3 => Ok(TileSound::Stone),
+            4 => Ok(TileSound::Metal),
+            5 => Ok(TileSound::Wood),
+            6 => Ok(TileSound::Mud),
+            7 => Ok(TileSound::Water),
+            8 => Ok(TileSound::DeepWater),
+            9 => Ok(TileSound::Snow),
+            10 => Ok(TileSound::Grass),
+            11 => Ok(TileSound::LongGrass),
+            12 => Ok(TileSound::Forest),
+            13 => Ok(TileSound::Cloud),
+            val => Err(UnknownTileSound(val)),
+        }
+    }
+}
+
+#[repr(u32)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub enum NewInterfaceType {
     CNIFMainFrame = 0,
     CNIFrame = 1,
