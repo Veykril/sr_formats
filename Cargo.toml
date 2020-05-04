@@ -5,9 +5,9 @@ authors = ["Lukas Wirth <lukastw97@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-nom = "5"
-bitflags = "1"
+nom = { version = "5.1", default-features = false, features = ["std"] }
+bitflags = "1.2"
 encoding_rs = "0.8"
-serde = { version = "1", features = ["derive"], optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
 struple = "0.1"
-mint = "0.5.4"
+mint = "0.5"
