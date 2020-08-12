@@ -27,7 +27,7 @@ pub use enums::*;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-trait SrFile {
+pub trait SrFile {
     type Input: ?Sized;
     type Output;
 
