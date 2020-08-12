@@ -52,4 +52,8 @@ pub trait SrFile {
     ) -> Result<Self::Output, nom::Err<(&Self::Input, nom::error::ErrorKind)>> {
         Self::parse(i)
     }
+
+    fn parse_opt(i: &Self::Input) -> Option<Self::Output> {
+        Self::parse::<()>(i).ok()
+    }
 }
