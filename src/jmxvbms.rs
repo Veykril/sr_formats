@@ -13,9 +13,11 @@ use struple::Struple;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::{
-    flags_u32, parse_objects_u32, sized_string, struple, vector2_f32, vector3_f32, vector6_f32,
-};
+use crate::parser_ext::combinator::struple;
+use crate::parser_ext::flags::flags_u32;
+use crate::parser_ext::multi::parse_objects_u32;
+use crate::parser_ext::number::{vector2_f32, vector3_f32, vector6_f32};
+use crate::parser_ext::string::sized_string;
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]

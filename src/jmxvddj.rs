@@ -9,7 +9,7 @@ use struple::Struple;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::struple_map;
+use crate::parser_ext::combinator::struple_map;
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]

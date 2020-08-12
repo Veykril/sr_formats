@@ -11,7 +11,9 @@ use serde::Serialize;
 
 use std::net::Ipv4Addr;
 
-use crate::{parse_objects_u8, sized_string, struple};
+use crate::parser_ext::combinator::struple;
+use crate::parser_ext::multi::parse_objects_u8;
+use crate::parser_ext::string::sized_string;
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]

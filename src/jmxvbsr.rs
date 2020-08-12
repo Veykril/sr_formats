@@ -13,10 +13,11 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{
-    parse_objects_u32, sized_path, sized_string, struple, struple_map, vector2_f32, vector6_f32,
-    ResourceAnimationType, ResourceType,
-};
+use crate::parser_ext::combinator::{struple, struple_map};
+use crate::parser_ext::multi::parse_objects_u32;
+use crate::parser_ext::number::{vector2_f32, vector6_f32};
+use crate::parser_ext::string::{sized_path, sized_string};
+use crate::{ResourceAnimationType, ResourceType};
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]

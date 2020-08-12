@@ -6,8 +6,14 @@ use nom::IResult;
 
 use std::path::PathBuf;
 
-use crate::enums::NewInterfaceType;
-use crate::{fixed_string_128, fixed_string_256, fixed_string_64, flags_u32, parse_objects_u32};
+use crate::{
+    enums::NewInterfaceType,
+    parser_ext::{
+        flags::flags_u32,
+        multi::parse_objects_u32,
+        string::{fixed_string_128, fixed_string_256, fixed_string_64},
+    },
+};
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -77,7 +83,7 @@ impl NewInterface {
         parse_objects_u32(Self::parse_single)(i).map(|(_, x)| x)
     }
 
-    #[rustfmt::skip] // don't look past this line
+    #[rustfmt::skip]
     fn parse_single<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         let (i, (name, image, background, text, description, prototype)) = tuple((
             fixed_string_64,

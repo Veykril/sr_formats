@@ -12,8 +12,9 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{
-    parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str, struple,
+use crate::parser_ext::combinator::struple;
+use crate::parser_ext::string::{
+    parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str,
 };
 
 #[cfg_attr(feature = "serde", derive(Serialize))]

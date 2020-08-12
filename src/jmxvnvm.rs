@@ -9,13 +9,13 @@ use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
 use struple::Struple;
 
+use crate::parser_ext::combinator::struple;
+use crate::parser_ext::flags::flags_u16;
+use crate::parser_ext::multi::{parse_objects_u16, parse_objects_u32, parse_objects_u8};
+use crate::parser_ext::number::{vector2_f32, vector3_f32};
+
 #[cfg(feature = "serde")]
 use serde::Serialize;
-
-use crate::{
-    flags_u16, parse_objects_u16, parse_objects_u32, parse_objects_u8, struple, vector2_f32,
-    vector3_f32,
-};
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]

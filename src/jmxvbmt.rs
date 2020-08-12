@@ -13,7 +13,11 @@ use serde::Serialize;
 
 use std::path::PathBuf;
 
-use crate::{flags_u32, parse_objects_u32, sized_path, sized_string, struple, vector4_f32};
+use crate::parser_ext::combinator::struple;
+use crate::parser_ext::flags::flags_u32;
+use crate::parser_ext::multi::parse_objects_u32;
+use crate::parser_ext::number::vector4_f32;
+use crate::parser_ext::string::{sized_path, sized_string};
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]

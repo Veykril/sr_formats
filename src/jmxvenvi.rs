@@ -11,7 +11,9 @@ use struple::Struple;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::{count_indexed, parse_objects_u32, sized_string, struple, vector3_f32};
+use crate::parser_ext::combinator::struple;
+use crate::parser_ext::multi::{count_indexed, parse_objects_u32};
+use crate::parser_ext::{number::vector3_f32, string::sized_string};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]

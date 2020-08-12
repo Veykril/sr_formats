@@ -11,7 +11,12 @@ use serde::Serialize;
 
 use std::{convert::TryFrom, path::PathBuf};
 
-use crate::{parse_objects_u32, sized_path, sized_string, struple, ResourceType};
+use crate::parser_ext::combinator::struple;
+use crate::parser_ext::{
+    multi::parse_objects_u32,
+    string::{sized_path, sized_string},
+};
+use crate::ResourceType;
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
