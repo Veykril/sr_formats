@@ -14,6 +14,7 @@ use crate::parser_ext::combinator::{struple, struple_map};
 use crate::parser_ext::multi::parse_objects_u32;
 use crate::parser_ext::number::{vector3_f32, vector4_f32};
 use crate::parser_ext::string::sized_string;
+use crate::SrFile;
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -23,7 +24,7 @@ pub struct KeyFrame {
 }
 
 impl KeyFrame {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple_map(pair(vector4_f32, vector3_f32))(i)
     }
 }
@@ -36,7 +37,7 @@ pub struct AnimatedBone {
 }
 
 impl AnimatedBone {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple_map(pair(sized_string, parse_objects_u32(KeyFrame::parse)))(i)
     }
 }
@@ -54,8 +55,12 @@ pub struct JmxAnimation {
     pub animated_bones: Vec<AnimatedBone>,
 }
 
-impl JmxAnimation {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxAnimation {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         preceded(
             tag(b"MXVBAN 0102"),
             struple((
@@ -69,6 +74,5 @@ impl JmxAnimation {
                 parse_objects_u32(AnimatedBone::parse),
             )),
         )(i)
-        .map(|(_, r)| r)
     }
 }

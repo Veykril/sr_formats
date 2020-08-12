@@ -11,6 +11,7 @@ use struple::Struple;
 use serde::Serialize;
 
 use crate::parser_ext::combinator::struple;
+use crate::SrFile;
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -21,7 +22,7 @@ pub struct MapMeshCell {
 }
 
 impl MapMeshCell {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((le_u32, le_u16, le_u8))(i)
     }
 }
@@ -41,7 +42,7 @@ pub struct MapBlock {
 }
 
 impl MapBlock {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             string_6,
             count(MapMeshCell::parse, 16 * 16 + 1),
@@ -72,12 +73,15 @@ pub struct JmxMapMesh {
     pub blocks: Vec<MapBlock>,
 }
 
-impl JmxMapMesh {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxMapMesh {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         map(
             preceded(tag(b"JMXVMAPM1000"), count(MapBlock::parse, 6 * 6)),
             |blocks| JmxMapMesh { blocks },
         )(i)
-        .map(|(_, this)| this)
     }
 }

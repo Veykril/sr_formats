@@ -14,6 +14,7 @@ use serde::Serialize;
 use crate::parser_ext::combinator::struple;
 use crate::parser_ext::multi::{count_indexed, parse_objects_u32};
 use crate::parser_ext::{number::vector3_f32, string::sized_string};
+use crate::SrFile;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -29,7 +30,7 @@ pub enum GraphPoint {
 }
 
 impl GraphPoint {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>(
+    fn parser<'a, E: ParseError<&'a [u8]>>(
         idx: usize,
     ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
         move |i| {
@@ -66,7 +67,7 @@ pub struct EnvironmentGroup {
 }
 
 impl EnvironmentGroup {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             sized_string,
             le_u16,
@@ -95,7 +96,7 @@ pub struct EnvironmentGroupEntry {
 }
 
 impl EnvironmentGroupEntry {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             sized_string,
             le_u16,
@@ -121,7 +122,7 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             le_u16,
             sized_string,
@@ -140,8 +141,13 @@ pub struct JmxEnvironment {
     pub environment_groups: Vec<EnvironmentGroup>,
 }
 
-impl JmxEnvironment {
-    pub fn parse(i: &[u8]) -> Result<Self, nom::Err<(&[u8], nom::error::ErrorKind)>> {
+impl SrFile for JmxEnvironment {
+    type Input = [u8];
+    type Output = Self;
+
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         map(
             preceded(
                 tag(b"JMXVENVI1003"),
@@ -158,6 +164,5 @@ impl JmxEnvironment {
                 environment_groups,
             },
         )(i)
-        .map(|(_, this)| this)
     }
 }

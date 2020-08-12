@@ -13,6 +13,8 @@ use crate::parser_ext::combinator::struple;
 use crate::parser_ext::multi::parse_objects_u32;
 use crate::parser_ext::number::{vector3_f32, vector4_f32};
 use crate::parser_ext::string::sized_string;
+use crate::SrFile;
+
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Bone {
@@ -29,7 +31,7 @@ pub struct Bone {
 }
 
 impl Bone {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             le_u8,
             sized_string,
@@ -53,12 +55,15 @@ pub struct JmxSkeleton {
     pub unk1: u32,
 }
 
-impl JmxSkeleton {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxSkeleton {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         preceded(
             tag("JMXVBSK 0101"),
             struple((parse_objects_u32(Bone::parse), le_u32, le_u32)),
         )(i)
-        .map(|(_, r)| r)
     }
 }

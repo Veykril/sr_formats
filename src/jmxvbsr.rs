@@ -17,6 +17,7 @@ use crate::parser_ext::combinator::{struple, struple_map};
 use crate::parser_ext::multi::parse_objects_u32;
 use crate::parser_ext::number::{vector2_f32, vector6_f32};
 use crate::parser_ext::string::{sized_path, sized_string};
+use crate::SrFile;
 use crate::{ResourceAnimationType, ResourceType};
 
 #[derive(Debug, Struple)]
@@ -29,7 +30,7 @@ pub struct BoundingBox {
 }
 
 impl BoundingBox {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             sized_string,
             vector6_f32,
@@ -50,7 +51,7 @@ pub struct MaterialDescriptor {
 }
 
 impl MaterialDescriptor {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple_map(pair(le_u32, sized_path))(i)
     }
 }
@@ -64,7 +65,7 @@ pub struct Animation {
 }
 
 impl Animation {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((le_u32, le_u32, parse_objects_u32(sized_path)))(i)
     }
 }
@@ -77,7 +78,7 @@ pub struct MeshGroup {
 }
 
 impl MeshGroup {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple_map(pair(sized_string, parse_objects_u32(le_u32)))(i)
     }
 }
@@ -92,7 +93,7 @@ pub struct AnimationEvent {
 }
 
 impl AnimationEvent {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((le_u32, le_u32, le_u32, le_u32))(i)
     }
 }
@@ -108,7 +109,7 @@ pub struct AnimationGroupEntry {
 }
 
 impl AnimationGroupEntry {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(
             tuple((
                 ResourceAnimationType::parse,
@@ -135,7 +136,7 @@ pub struct AnimationGroup {
 }
 
 impl AnimationGroup {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple_map(pair(
             sized_string,
             parse_objects_u32(AnimationGroupEntry::parse),
@@ -156,8 +157,12 @@ pub struct JmxRes {
     pub animation_groups: Vec<AnimationGroup>,
 }
 
-impl JmxRes {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxRes {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         let (_, header) = nom::error::context("resource header", JmxResHeader::parse)(i)?;
         let (_, bounding_box) = BoundingBox::parse(&i[header.bounding_box_offset as usize..])?;
         let (_, material_sets) =
@@ -174,16 +179,19 @@ impl JmxRes {
         let (_, animation_groups) =
             parse_objects_u32(AnimationGroup::parse)(&i[header.animation_group_offset as usize..])?;
 
-        Ok(JmxRes {
-            header,
-            bounding_box,
-            material_sets,
-            mesh_paths,
-            animation,
-            skeleton_paths,
-            mesh_groups,
-            animation_groups,
-        })
+        Ok((
+            &[],
+            JmxRes {
+                header,
+                bounding_box,
+                material_sets,
+                mesh_paths,
+                animation,
+                skeleton_paths,
+                mesh_groups,
+                animation_groups,
+            },
+        ))
     }
 }
 

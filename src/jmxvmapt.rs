@@ -8,6 +8,8 @@ use nom::sequence::{pair, preceded};
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
+use crate::SrFile;
+
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMapTexture {
@@ -16,8 +18,13 @@ pub struct JmxMapTexture {
     pub data: Vec<u8>,
 }
 
-impl JmxMapTexture {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxMapTexture {
+    type Input = [u8];
+    type Output = Self;
+
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> nom::IResult<&'i Self::Input, Self::Output, E> {
         map(
             preceded(
                 tag("JMXVMAPT 1001"),
@@ -32,6 +39,5 @@ impl JmxMapTexture {
                 data,
             },
         )(i)
-        .map(|(_, r)| r)
     }
 }

@@ -18,6 +18,7 @@ use crate::parser_ext::flags::flags_u32;
 use crate::parser_ext::multi::parse_objects_u32;
 use crate::parser_ext::number::{vector2_f32, vector3_f32, vector6_f32};
 use crate::parser_ext::string::sized_string;
+use crate::SrFile;
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -81,7 +82,7 @@ pub struct ClothEdge {
 }
 
 impl ClothEdge {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((le_u32, le_u32, le_f32))(i)
     }
 }
@@ -101,7 +102,7 @@ pub struct ClothSimParams {
 }
 
 impl ClothSimParams {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             le_u32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_u32,
         ))(i)
@@ -131,7 +132,7 @@ pub struct ClothVertex {
 }
 
 impl ClothVertex {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((le_f32, map(le_u32, |int| int != 0)))(i)
     }
 }
@@ -146,7 +147,7 @@ pub struct BoneIndexData {
 }
 
 impl BoneIndexData {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((le_u8, le_u16, le_u8, le_u16))(i)
     }
 }
@@ -170,7 +171,7 @@ fn parse_bones<'a, E: ParseError<&'a [u8]>>(
 pub struct Face(pub [u16; 3]);
 
 impl Face {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         map(tuple((le_u16, le_u16, le_u16)), |data| {
             Face([data.0, data.1, data.2])
         })(i)
@@ -186,7 +187,7 @@ pub struct Gate {
 }
 
 impl Gate {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             sized_string,
             parse_objects_u32(vector3_f32),
@@ -209,7 +210,7 @@ pub struct ObjectLines {
 }
 
 impl ObjectLines {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>(
+    fn parser<'a, E: ParseError<&'a [u8]>>(
         nav_flag: NavFlags,
     ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
@@ -239,7 +240,7 @@ pub struct NavMesh {
 }
 
 impl NavMesh {
-    pub fn parser<'a, E: ParseError<&'a [u8]>>(
+    fn parser<'a, E: ParseError<&'a [u8]>>(
         nav_flag: NavFlags,
     ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
@@ -282,8 +283,12 @@ pub struct JmxBMesh {
     pub nav_mesh: Option<NavMesh>,
 }
 
-impl JmxBMesh {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxBMesh {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         let (_, header) = JmxBMeshHeader::parse(i)?;
         let has_light_map = header.vertex_flags.contains(VertexFlags::HAS_LIGHT_MAP);
         let (_, (vertices, light_map_path)) = pair(
@@ -301,18 +306,21 @@ impl JmxBMesh {
             &i[header.nav_mesh as usize..],
         )?;
 
-        Ok(JmxBMesh {
-            header,
-            vertices,
-            light_map_path,
-            bone_data,
-            faces,
-            cloth_vertex,
-            cloth_edges,
-            bounding_box,
-            gates,
-            nav_mesh,
-        })
+        Ok((
+            &[],
+            JmxBMesh {
+                header,
+                vertices,
+                light_map_path,
+                bone_data,
+                faces,
+                cloth_vertex,
+                cloth_edges,
+                bounding_box,
+                gates,
+                nav_mesh,
+            },
+        ))
     }
 }
 

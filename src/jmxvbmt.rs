@@ -18,6 +18,7 @@ use crate::parser_ext::flags::flags_u32;
 use crate::parser_ext::multi::parse_objects_u32;
 use crate::parser_ext::number::vector4_f32;
 use crate::parser_ext::string::{sized_path, sized_string};
+use crate::SrFile;
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -59,7 +60,7 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             sized_string,
             vector4_f32,
@@ -91,12 +92,15 @@ impl Material {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMat(pub Vec<Material>);
 
-impl JmxMat {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxMat {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         map(
             preceded(tag(b"JMXVBMT 0102"), parse_objects_u32(Material::parse)),
             JmxMat,
         )(i)
-        .map(|(_, r)| r)
     }
 }

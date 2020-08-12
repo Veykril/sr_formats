@@ -10,6 +10,7 @@ use struple::Struple;
 use serde::Serialize;
 
 use crate::parser_ext::combinator::struple_map;
+use crate::SrFile;
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -18,14 +19,17 @@ pub struct JmxTexture {
     pub data: Vec<u8>,
 }
 
-impl JmxTexture {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxTexture {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> nom::IResult<&'i Self::Input, Self::Output, E> {
         struple_map(preceded(
             tag(b"JMXVDDJ 1000"),
             flat_map(le_u32, |texture_size| {
                 pair(le_u32, count(le_u8, texture_size as usize - 8))
             }),
         ))(i)
-        .map(|(_, r)| r)
     }
 }

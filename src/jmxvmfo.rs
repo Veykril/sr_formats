@@ -8,6 +8,8 @@ use nom::sequence::preceded;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
+use crate::SrFile;
+
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMapInfo {
@@ -15,8 +17,13 @@ pub struct JmxMapInfo {
     pub region_data: Box<[u8]>,
 }
 
-impl JmxMapInfo {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxMapInfo {
+    type Input = [u8];
+    type Output = Self;
+
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> nom::IResult<&'i Self::Input, Self::Output, E> {
         map(
             preceded(
                 tag("JMXVMFO 1000"),
@@ -26,6 +33,5 @@ impl JmxMapInfo {
                 region_data: region_data.into_boxed_slice(),
             },
         )(i)
-        .map(|(_, r)| r)
     }
 }

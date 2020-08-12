@@ -16,6 +16,7 @@ use crate::parser_ext::combinator::struple;
 use crate::parser_ext::string::{
     parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str, parse_u8_str,
 };
+use crate::SrFile;
 
 fn parse_f32_hex_dumped_str<'a, E: ParseError<&'a str>>(
     input: &'a str,
@@ -39,17 +40,22 @@ pub struct ObjectStringIfo {
     pub string: String,
 }
 
-impl ObjectStringIfo {
-    pub fn parse<'a, E: ParseError<&'a str>>(i: &'a str) -> Result<Vec<Self>, nom::Err<E>> {
+impl SrFile for ObjectStringIfo {
+    type Input = str;
+    type Output = Vec<Self>;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         preceded(
             tag("JMXVOBJI1000\n"),
             flat_map(terminated(parse_u16_str, line_ending), |count| {
                 many_m_n(count as usize, count as usize, Self::parse_single)
             }),
         )(i)
-        .map(|(_, r)| r)
     }
+}
 
+impl ObjectStringIfo {
     fn parse_single<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Self, E> {
         terminated(
             struple((
@@ -76,17 +82,23 @@ pub struct ObjectIfo {
     pub path: PathBuf,
 }
 
-impl ObjectIfo {
-    pub fn parse<'a, E: ParseError<&'a str>>(i: &'a str) -> Result<Vec<Self>, nom::Err<E>> {
+impl SrFile for ObjectIfo {
+    type Input = str;
+    type Output = Vec<Self>;
+
+    fn nom_parse<'a, E: ParseError<&'a Self::Input>>(
+        i: &'a Self::Input,
+    ) -> IResult<&'a Self::Input, Self::Output, E> {
         preceded(
             tag("JMXVOBJI1000\n"),
             flat_map(terminated(parse_u16_str, line_ending), |count| {
                 many_m_n(count as usize, count as usize, Self::parse_single)
             }),
         )(i)
-        .map(|(_, r)| r)
     }
+}
 
+impl ObjectIfo {
     fn parse_single<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Self, E> {
         terminated(
             struple((

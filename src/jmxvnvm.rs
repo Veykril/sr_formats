@@ -13,6 +13,7 @@ use crate::parser_ext::combinator::struple;
 use crate::parser_ext::flags::flags_u16;
 use crate::parser_ext::multi::{parse_objects_u16, parse_objects_u32, parse_objects_u8};
 use crate::parser_ext::number::{vector2_f32, vector3_f32};
+use crate::SrFile;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -49,7 +50,7 @@ pub struct NavEntry {
 }
 
 impl NavEntry {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             le_u32,
             vector3_f32,
@@ -73,7 +74,7 @@ pub struct NavCell {
 }
 
 impl NavCell {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((vector2_f32, vector2_f32, parse_objects_u8(le_u16)))(i)
     }
 }
@@ -93,7 +94,7 @@ pub struct NavRegionLink {
 }
 
 impl NavRegionLink {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             vector2_f32,
             vector2_f32,
@@ -121,7 +122,7 @@ pub struct NavCellLink {
 }
 
 impl NavCellLink {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         struple((
             vector2_f32,
             vector2_f32,
@@ -146,8 +147,12 @@ pub struct JmxNvm {
     pub height_map: Box<[f32]>,
 }
 
-impl JmxNvm {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxNvm {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         map(
             preceded(
                 tag(b"JMXVNVM 1000"),
@@ -173,6 +178,5 @@ impl JmxNvm {
                 height_map: data.5,
             },
         )(i)
-        .map(|(_, r)| r)
     }
 }

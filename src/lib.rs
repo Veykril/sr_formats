@@ -27,5 +27,29 @@ pub use enums::*;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-pub type VerboseError<'a> = nom::error::VerboseError<&'a [u8]>;
-pub type NormalError<'a> = (&'a [u8], nom::error::ErrorKind);
+trait SrFile {
+    type Input: ?Sized;
+    type Output;
+
+    fn nom_parse<'i, E: nom::error::ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> nom::IResult<&'i Self::Input, Self::Output, E>;
+
+    fn parse<'i, E: nom::error::ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> Result<Self::Output, nom::Err<E>> {
+        Self::nom_parse(i).map(|(_, r)| r)
+    }
+
+    fn parse_verbose<'i>(
+        i: &'i Self::Input,
+    ) -> Result<Self::Output, nom::Err<nom::error::VerboseError<&'i Self::Input>>> {
+        Self::parse(i)
+    }
+
+    fn parse_simple(
+        i: &Self::Input,
+    ) -> Result<Self::Output, nom::Err<(&Self::Input, nom::error::ErrorKind)>> {
+        Self::parse(i)
+    }
+}

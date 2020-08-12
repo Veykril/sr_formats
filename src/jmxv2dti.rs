@@ -16,6 +16,7 @@ use crate::parser_ext::combinator::struple;
 use crate::parser_ext::string::{
     parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str,
 };
+use crate::SrFile;
 
 #[cfg_attr(feature = "serde", derive(Serialize))]
 #[derive(Debug, PartialEq, Struple)]
@@ -29,17 +30,22 @@ pub struct TileInfo2D {
     pub extra: Vec<(u16, u16)>,
 }
 
-impl TileInfo2D {
-    pub fn parse<'a, E: ParseError<&'a str>>(i: &'a str) -> Result<Vec<Self>, nom::Err<E>> {
+impl SrFile for TileInfo2D {
+    type Input = str;
+    type Output = Vec<Self>;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         preceded(
             tag("JMXV2DTI1001\n"),
             flat_map(terminated(parse_u16_str, line_ending), |count| {
                 many_m_n(count as usize, count as usize, Self::parse_single)
             }),
         )(i)
-        .map(|(_, r)| r)
     }
+}
 
+impl TileInfo2D {
     fn parse_single<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Self, E> {
         terminated(
             struple((

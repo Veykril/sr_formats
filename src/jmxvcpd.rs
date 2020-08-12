@@ -12,11 +12,10 @@ use serde::Serialize;
 use std::{convert::TryFrom, path::PathBuf};
 
 use crate::parser_ext::combinator::struple;
-use crate::parser_ext::{
-    multi::parse_objects_u32,
-    string::{sized_path, sized_string},
-};
+use crate::parser_ext::multi::parse_objects_u32;
+use crate::parser_ext::string::{sized_path, sized_string};
 use crate::ResourceType;
+use crate::SrFile;
 
 #[derive(Debug, Struple)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -26,19 +25,26 @@ pub struct JmxCompound {
     pub resource_paths: Vec<PathBuf>,
 }
 
-impl JmxCompound {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Self, nom::Err<E>> {
+impl SrFile for JmxCompound {
+    type Input = [u8];
+    type Output = Self;
+    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
+        i: &'i Self::Input,
+    ) -> IResult<&'i Self::Input, Self::Output, E> {
         let (_, header) = JmxCompoundHeader::parse(i)?;
 
         let (_, collision_resource_path) = sized_path(&i[header.collision_resources as usize..])?;
         let (_, resource_paths) =
             parse_objects_u32(sized_path)(&i[header.resource_list as usize..])?;
 
-        Ok(JmxCompound {
-            header,
-            collision_resource_path,
-            resource_paths,
-        })
+        Ok((
+            &[],
+            JmxCompound {
+                header,
+                collision_resource_path,
+                resource_paths,
+            },
+        ))
     }
 }
 
@@ -59,7 +65,7 @@ pub struct JmxCompoundHeader {
 }
 
 impl JmxCompoundHeader {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
         preceded(
             tag(b"JMXVCPD 0101"),
             struple((
