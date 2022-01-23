@@ -44,7 +44,7 @@ impl Division {
     fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map(
             pair(
-                terminated(sized_string, tag(b"\0x00")),
+                terminated(sized_string, tag(b"\x00")),
                 parse_objects_u8(Gateway::parse),
             ),
             ttr_closure! {
@@ -65,7 +65,7 @@ pub struct Gateway {
 impl Gateway {
     fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map(
-            terminated(map_res(sized_string, |addr| addr.parse()), tag(b"\0x00")),
+            terminated(map_res(sized_string, |addr| addr.parse()), tag(b"\x00")),
             ttr_closure! { Gateway { ip } },
         )(i)
     }
