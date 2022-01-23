@@ -3,7 +3,7 @@ use nom::number::complete::le_u32;
 use nom::IResult;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 use std::convert::TryFrom;
 

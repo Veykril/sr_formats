@@ -6,7 +6,7 @@ use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::IResult;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 use std::path::Path;
 

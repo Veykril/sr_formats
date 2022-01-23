@@ -4,7 +4,7 @@ use nom::number::complete::le_u8;
 use nom::sequence::preceded;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 use crate::parser_ext::multi::count;
 

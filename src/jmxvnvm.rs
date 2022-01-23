@@ -12,7 +12,7 @@ use crate::parser_ext::number::{vector2_f32, vector3_f32};
 use crate::ttr_closure;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]

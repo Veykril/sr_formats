@@ -8,14 +8,16 @@ edition = "2021"
 nom = { version = "7.1.0", default-features = false, features = ["std"] }
 bitflags = "1.3.2"
 encoding_rs = "0.8.30"
-serde = { version = "1.0.135", optional = true, features = ["derive"] }
 mint = "0.5.8"
+
+serde = { version = "1.0.135", optional = true }
+serde_derive = { version = "1.0.135", optional = true }
 
 [features]
 default = []
 # can't have features and crate names clash, can't rename serde because its proc-macro relies on the crate name
-serde1 = ["mint/serde", "serde"]
+serde1 = ["mint/serde", "serde", "serde_derive"]
 
 [dev-dependencies]
-# pk2 = { git = "https://github.com/Veykril/pk2", branch = "access" }
-pk2 = { path = "../pk2" }
+pk2 = { git = "https://github.com/Veykril/pk2", branch = "access" }
+# pk2 = { path = "../pk2" }

@@ -4,7 +4,7 @@ use nom::number::complete::{le_u16, le_u32};
 use nom::sequence::tuple;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 use crate::parser_ext::multi::parse_objects_u32;
 use crate::parser_ext::number::vector3_f32;

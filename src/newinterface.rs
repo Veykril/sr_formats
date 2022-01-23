@@ -11,7 +11,7 @@ use crate::parser_ext::string::{fixed_path, fixed_string_64};
 use crate::NewInterfaceType;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 bitflags::bitflags! {
     #[cfg_attr(feature = "serde", derive(Serialize))]

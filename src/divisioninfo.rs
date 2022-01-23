@@ -5,7 +5,7 @@ use nom::sequence::{pair, terminated};
 use nom::IResult;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 use std::net::Ipv4Addr;
 

@@ -7,7 +7,7 @@ use nom::sequence::{preceded, tuple};
 use nom::IResult;
 
 #[cfg(feature = "serde")]
-use serde::Serialize;
+use serde_derive::Serialize;
 
 use crate::parser_ext::multi::parse_objects_u32;
 use crate::parser_ext::string::{sized_path, sized_string};
