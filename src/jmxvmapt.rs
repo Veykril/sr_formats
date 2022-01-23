@@ -1,30 +1,23 @@
 use nom::bytes::complete::tag;
 use nom::combinator::{flat_map, map};
-use nom::error::ParseError;
-use nom::multi::count;
 use nom::number::complete::{le_u32, le_u8};
 use nom::sequence::{pair, preceded};
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::SrFile;
+use crate::parser_ext::multi::count;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxMapTexture {
-    pub shadow_map_tiles: Vec<u8>, //9216
+    pub shadow_map_tiles: Box<[u8]>, //9216
     pub header_len: u32,
-    pub data: Vec<u8>,
+    pub data: Box<[u8]>,
 }
 
-impl SrFile for JmxMapTexture {
-    type Input = [u8];
-    type Output = Self;
-
-    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> nom::IResult<&'i Self::Input, Self::Output, E> {
+impl JmxMapTexture {
+    pub fn parse<'i>(i: &'i [u8]) -> nom::IResult<&'i [u8], Self> {
         map(
             preceded(
                 tag("JMXVMAPT 1001"),

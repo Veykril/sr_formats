@@ -1,20 +1,16 @@
 use mint::Vector3;
 use nom::bytes::complete::tag;
 use nom::combinator::{flat_map, map};
-use nom::error::ParseError;
-use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32};
-use nom::sequence::{pair, preceded};
+use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
-use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use crate::parser_ext::combinator::struple;
-use crate::parser_ext::multi::{count_indexed, parse_objects_u32};
+use crate::parser_ext::multi::{count, count_indexed, parse_objects_u32};
 use crate::parser_ext::{number::vector3_f32, string::sized_string};
-use crate::SrFile;
+use crate::ttr_closure;
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
@@ -30,9 +26,7 @@ pub enum GraphPoint {
 }
 
 impl GraphPoint {
-    fn parser<'a, E: ParseError<&'a [u8]>>(
-        idx: usize,
-    ) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parser<'a>(idx: usize) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], Self> {
         move |i| {
             if idx == 7 || idx == 8 || idx == 10 || idx == 11 || idx == 12 || idx == 15 {
                 map(pair(le_f32, le_f32), |(value, pos_on_graph)| {
@@ -53,38 +47,52 @@ impl GraphPoint {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct EnvironmentGroup {
-    pub name: String,
+    pub name: Box<str>,
     pub unk0: u16,
     pub unk1: u16,
     pub unk2: u16,
     pub unk3: u16,
     pub unk4: u16,
     pub unk5: u16,
-    pub entries: Vec<EnvironmentGroupEntry>,
+    pub entries: Box<[EnvironmentGroupEntry]>,
 }
 
 impl EnvironmentGroup {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            sized_string,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-            parse_objects_u32(EnvironmentGroupEntry::parse),
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                sized_string,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+                parse_objects_u32(EnvironmentGroupEntry::parse),
+            )),
+            ttr_closure! {
+                EnvironmentGroup {
+                    name,
+                    unk0,
+                    unk1,
+                    unk2,
+                    unk3,
+                    unk4,
+                    unk5,
+                    entries
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct EnvironmentGroupEntry {
-    pub name: String,
+    pub name: Box<str>,
     pub unk0: u16,
     pub unk1: u16,
     pub unk2: u16,
@@ -96,40 +104,66 @@ pub struct EnvironmentGroupEntry {
 }
 
 impl EnvironmentGroupEntry {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            sized_string,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                sized_string,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+            )),
+            ttr_closure! {
+                EnvironmentGroupEntry {
+                    name,
+                    unk0,
+                    unk1,
+                    unk2,
+                    unk3,
+                    unk4,
+                    unk5,
+                    unk6,
+                    unk7
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Environment {
     pub id: u16,
-    pub name: String,
+    pub name: Box<str>,
     pub unk0: u32,
     pub unk1: u32,
-    pub fncs: Vec<Vec<GraphPoint>>, //16
+    pub fncs: Box<[Box<[GraphPoint]>]>, //16
 }
 
 impl Environment {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            le_u16,
-            sized_string,
-            le_u32,
-            le_u32,
-            count_indexed(|i, idx| parse_objects_u32(GraphPoint::parser(idx))(i), 16),
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                le_u16,
+                sized_string,
+                le_u32,
+                le_u32,
+                count_indexed(|i, idx| parse_objects_u32(GraphPoint::parser(idx))(i), 16),
+            )),
+            ttr_closure! {
+                Environment {
+                    id,
+                    name,
+                    unk0,
+                    unk1,
+                    fncs
+                }
+            },
+        )(i)
     }
 }
 
@@ -137,17 +171,12 @@ impl Environment {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxEnvironment {
     pub unk0: u16,
-    pub environments: Vec<Environment>,
-    pub environment_groups: Vec<EnvironmentGroup>,
+    pub environments: Box<[Environment]>,
+    pub environment_groups: Box<[EnvironmentGroup]>,
 }
 
-impl SrFile for JmxEnvironment {
-    type Input = [u8];
-    type Output = Self;
-
-    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> IResult<&'i Self::Input, Self::Output, E> {
+impl JmxEnvironment {
+    pub fn parse<'i>(i: &'i [u8]) -> IResult<&'i [u8], Self> {
         map(
             preceded(
                 tag(b"JMXVENVI1003"),

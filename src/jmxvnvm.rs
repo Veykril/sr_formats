@@ -2,18 +2,14 @@ use bitflags::bitflags;
 use mint::{Vector2, Vector3};
 use nom::bytes::complete::tag;
 use nom::combinator::{flat_map, map};
-use nom::error::ParseError;
-use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
-use struple::Struple;
 
-use crate::parser_ext::combinator::struple;
 use crate::parser_ext::flags::flags_u16;
-use crate::parser_ext::multi::{parse_objects_u16, parse_objects_u32, parse_objects_u8};
+use crate::parser_ext::multi::{count, parse_objects_u16, parse_objects_u32, parse_objects_u8};
 use crate::parser_ext::number::{vector2_f32, vector3_f32};
-use crate::SrFile;
+use crate::ttr_closure;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -35,7 +31,7 @@ bitflags! {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavEntry {
     pub id: u32,
@@ -46,40 +42,64 @@ pub struct NavEntry {
     pub scale: u16,
     pub event_zone_flag: EventZoneFlag,
     pub region_id: u16,
-    pub mount_points: Vec<(u8, u8, u8, u8, u8, u8)>,
+    pub mount_points: Box<[(u8, u8, u8, u8, u8, u8)]>,
 }
 
 impl NavEntry {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            le_u32,
-            vector3_f32,
-            flags_u16(CollisionFlag::from_bits),
-            le_f32,
-            le_u16,
-            le_u16,
-            flags_u16(EventZoneFlag::from_bits),
-            le_u16,
-            parse_objects_u16(tuple((le_u8, le_u8, le_u8, le_u8, le_u8, le_u8))),
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                le_u32,
+                vector3_f32,
+                flags_u16(CollisionFlag::from_bits),
+                le_f32,
+                le_u16,
+                le_u16,
+                flags_u16(EventZoneFlag::from_bits),
+                le_u16,
+                parse_objects_u16(tuple((le_u8, le_u8, le_u8, le_u8, le_u8, le_u8))),
+            )),
+            ttr_closure! {
+                NavEntry {
+                    id,
+                    position,
+                    collision_flag,
+                    yaw,
+                    unique_id,
+                    scale,
+                    event_zone_flag,
+                    region_id,
+                    mount_points
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavCell {
     pub min: Vector2<f32>,
     pub max: Vector2<f32>,
-    pub entries: Vec<u16>,
+    pub entries: Box<[u16]>,
 }
 
 impl NavCell {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((vector2_f32, vector2_f32, parse_objects_u8(le_u16)))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((vector2_f32, vector2_f32, parse_objects_u8(le_u16))),
+            ttr_closure! {
+                NavCell {
+                    min,
+                    max,
+                    entries
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavRegionLink {
     pub min: Vector2<f32>,
@@ -94,22 +114,37 @@ pub struct NavRegionLink {
 }
 
 impl NavRegionLink {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            vector2_f32,
-            vector2_f32,
-            le_u8,
-            le_u8,
-            le_u8,
-            le_u16,
-            le_u16,
-            le_u16,
-            le_u16,
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                vector2_f32,
+                vector2_f32,
+                le_u8,
+                le_u8,
+                le_u8,
+                le_u16,
+                le_u16,
+                le_u16,
+                le_u16,
+            )),
+            ttr_closure! {
+                    NavRegionLink {
+                    min,
+                    max,
+                    line_flag,
+                    line_source,
+                    line_destination,
+                    cell_source,
+                    cell_destination,
+                    region_source,
+                    region_destination
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NavCellLink {
     pub min: Vector2<f32>,
@@ -122,37 +157,46 @@ pub struct NavCellLink {
 }
 
 impl NavCellLink {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            vector2_f32,
-            vector2_f32,
-            le_u8,
-            le_u8,
-            le_u8,
-            le_u16,
-            le_u16,
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                vector2_f32,
+                vector2_f32,
+                le_u8,
+                le_u8,
+                le_u8,
+                le_u16,
+                le_u16,
+            )),
+            ttr_closure! {
+                NavCellLink {
+                    min,
+                    max,
+                    line_flag,
+                    line_source,
+                    line_destination,
+                    cell_source,
+                    cell_destination
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxNvm {
-    pub nav_entries: Vec<NavEntry>,
+    pub nav_entries: Box<[NavEntry]>,
     pub nav_extra_count: u32,
-    pub nav_cells: Vec<NavCell>,
-    pub nav_region_links: Vec<NavRegionLink>,
-    pub nav_cell_links: Vec<NavCellLink>,
+    pub nav_cells: Box<[NavCell]>,
+    pub nav_region_links: Box<[NavRegionLink]>,
+    pub nav_cell_links: Box<[NavCellLink]>,
     pub texture_map: Box<[(u16, u16, u16, u16)]>,
     pub height_map: Box<[f32]>,
 }
 
-impl SrFile for JmxNvm {
-    type Input = [u8];
-    type Output = Self;
-    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> IResult<&'i Self::Input, Self::Output, E> {
+impl JmxNvm {
+    pub fn parse<'i>(i: &'i [u8]) -> IResult<&'i [u8], Self> {
         map(
             preceded(
                 tag(b"JMXVNVM 1000"),
@@ -161,11 +205,8 @@ impl SrFile for JmxNvm {
                     flat_map(le_u32, |c| pair(le_u32, count(NavCell::parse, c as usize))),
                     parse_objects_u32(NavRegionLink::parse),
                     parse_objects_u32(NavCellLink::parse),
-                    map(
-                        count(tuple((le_u16, le_u16, le_u16, le_u16)), 96 * 96),
-                        Vec::into_boxed_slice,
-                    ),
-                    map(count(le_f32, 97 * 97), Vec::into_boxed_slice),
+                    count(tuple((le_u16, le_u16, le_u16, le_u16)), 96 * 96),
+                    count(le_f32, 97 * 97),
                 )),
             ),
             |data| JmxNvm {

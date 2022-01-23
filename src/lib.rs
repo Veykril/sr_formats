@@ -1,7 +1,7 @@
-#![warn(clippy::all)]
 pub mod divisioninfo;
 pub mod gmwpfort;
 pub mod jmxv2dti;
+
 pub mod jmxvban;
 pub mod jmxvbms;
 pub mod jmxvbmt;
@@ -24,36 +24,17 @@ mod parser_ext;
 pub mod enums;
 pub use enums::*;
 
-#[cfg(feature = "serde")]
-use serde::Serialize;
-
-pub trait SrFile {
-    type Input: ?Sized;
-    type Output;
-
-    fn nom_parse<'i, E: nom::error::ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> nom::IResult<&'i Self::Input, Self::Output, E>;
-
-    fn parse<'i, E: nom::error::ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> Result<Self::Output, nom::Err<E>> {
-        Self::nom_parse(i).map(|(_, r)| r)
-    }
-
-    fn parse_verbose<'i>(
-        i: &'i Self::Input,
-    ) -> Result<Self::Output, nom::Err<nom::error::VerboseError<&'i Self::Input>>> {
-        Self::parse(i)
-    }
-
-    fn parse_simple(
-        i: &Self::Input,
-    ) -> Result<Self::Output, nom::Err<(&Self::Input, nom::error::ErrorKind)>> {
-        Self::parse(i)
-    }
-
-    fn parse_opt(i: &Self::Input) -> Option<Self::Output> {
-        Self::parse::<()>(i).ok()
-    }
+/// ttr_closure!{} <- r-a hint to use braces
+macro_rules! tuple_to_record_closure {
+    // -> injection
+    ($( $closed:ident ),+ -> $ident:ident { $( $field:ident ),+ $(,)? }) => {
+        move |($( $field ),+)| $ident { $( $closed, )+ $( $field ),+ }
+    };
+    ($ident:ident { $field:ident $(,)? }) => {
+        | $field | $ident {  $field }
+    };
+    ($ident:ident { $( $field:ident ),+ $(,)? }) => {
+        |($( $field ),+)| $ident { $( $field ),+ }
+    };
 }
+use tuple_to_record_closure as ttr_closure;

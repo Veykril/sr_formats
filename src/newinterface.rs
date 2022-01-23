@@ -1,19 +1,14 @@
+use std::path::Path;
+
 use nom::combinator::map;
-use nom::error::ParseError;
 use nom::number::complete::{le_f32, le_u32};
 use nom::sequence::tuple;
 use nom::IResult;
 
-use std::path::PathBuf;
-
-use crate::{
-    enums::NewInterfaceType,
-    parser_ext::{
-        flags::flags_u32,
-        multi::parse_objects_u32,
-        string::{fixed_string_128, fixed_string_256, fixed_string_64},
-    },
-};
+use crate::parser_ext::flags::flags_u32;
+use crate::parser_ext::multi::parse_objects_u32;
+use crate::parser_ext::string::{fixed_path, fixed_string_64};
+use crate::NewInterfaceType;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
@@ -31,12 +26,12 @@ bitflags::bitflags! {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct NewInterface {
-    pub name: String,
-    pub image: PathBuf,
-    pub background: PathBuf,
-    pub text: PathBuf,
-    pub description: String,
-    pub prototype: String,
+    pub name: Box<str>,
+    pub image: Box<Path>,
+    pub background: Box<Path>,
+    pub text: Box<Path>,
+    pub description: Box<str>,
+    pub prototype: Box<str>,
     pub ty: NewInterfaceType,
     pub id: u32,
     pub parent_id: u32,
@@ -79,17 +74,17 @@ pub struct NewInterface {
 }
 
 impl NewInterface {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> Result<Vec<Self>, nom::Err<E>> {
-        parse_objects_u32(Self::parse_single)(i).map(|(_, x)| x)
+    pub fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Box<[Self]>> {
+        parse_objects_u32(Self::parse_single)(i)
     }
 
     #[rustfmt::skip]
-    fn parse_single<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse_single<'a, >(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         let (i, (name, image, background, text, description, prototype)) = tuple((
             fixed_string_64,
-            map(fixed_string_256, From::from),
-            map(fixed_string_256, From::from),
-            map(fixed_string_128, From::from),
+            fixed_path::<256>,
+            fixed_path::<256>,
+            fixed_path::<128>,
             fixed_string_64,
             fixed_string_64,
         ))(i)?;

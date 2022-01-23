@@ -1,89 +1,115 @@
 use mint::Vector2;
 use nom::bytes::complete::tag;
 use nom::combinator::{cond, flat_map, map};
-use nom::error::ParseError;
-use nom::multi::count;
 use nom::number::complete::{le_f32, le_u32, le_u8};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
-use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use std::path::PathBuf;
+use std::path::Path;
 
-use crate::parser_ext::combinator::{struple, struple_map};
-use crate::parser_ext::multi::parse_objects_u32;
+use crate::parser_ext::multi::{count, parse_objects_u32};
 use crate::parser_ext::number::{vector2_f32, vector6_f32};
 use crate::parser_ext::string::{sized_path, sized_string};
-use crate::SrFile;
-use crate::{ResourceAnimationType, ResourceType};
+use crate::{ttr_closure, ResourceAnimationType, ResourceType};
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct BoundingBox {
-    pub root_mesh: String,
+    pub root_mesh: Box<str>,
     pub bounding_box0: [f32; 6],
     pub bounding_box1: [f32; 6],
-    pub extra_bounding_data: Vec<u8>,
+    pub extra_bounding_data: Box<[u8]>,
 }
 
 impl BoundingBox {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            sized_string,
-            vector6_f32,
-            vector6_f32,
-            map(
-                flat_map(le_u32, |val| cond(val != 0, count(le_u8, 64))),
-                |ebd| ebd.unwrap_or_default(),
-            ),
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                sized_string,
+                vector6_f32,
+                vector6_f32,
+                map(
+                    flat_map(le_u32, |val| cond(val != 0, count(le_u8, 64))),
+                    |ebd| ebd.unwrap_or_default(),
+                ),
+            )),
+            ttr_closure! {
+                BoundingBox {
+                    root_mesh,
+                    bounding_box0,
+                    bounding_box1,
+                    extra_bounding_data,
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MaterialDescriptor {
     pub id: u32,
-    pub path: PathBuf,
+    pub path: Box<Path>,
 }
 
 impl MaterialDescriptor {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple_map(pair(le_u32, sized_path))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            pair(le_u32, sized_path),
+            ttr_closure! {
+                MaterialDescriptor {
+                    id, path
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Animation {
     pub unk0: u32,
     pub unk1: u32,
-    pub paths: Vec<PathBuf>,
+    pub paths: Box<[Box<Path>]>,
 }
 
 impl Animation {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((le_u32, le_u32, parse_objects_u32(sized_path)))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((le_u32, le_u32, parse_objects_u32(sized_path))),
+            ttr_closure! {
+                Animation {
+                    unk0, unk1, paths
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct MeshGroup {
-    pub name: String,
-    pub file_indices: Vec<u32>,
+    pub name: Box<str>,
+    pub file_indices: Box<[u32]>,
 }
 
 impl MeshGroup {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple_map(pair(sized_string, parse_objects_u32(le_u32)))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            pair(sized_string, parse_objects_u32(le_u32)),
+            ttr_closure! {
+                MeshGroup {
+                    name, file_indices
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AnimationEvent {
     pub key_time: u32,
@@ -93,8 +119,18 @@ pub struct AnimationEvent {
 }
 
 impl AnimationEvent {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((le_u32, le_u32, le_u32, le_u32))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((le_u32, le_u32, le_u32, le_u32)),
+            ttr_closure! {
+                AnimationEvent {
+                    key_time,
+                    typ,
+                    unk0,
+                    unk1
+                }
+            },
+        )(i)
     }
 }
 
@@ -103,13 +139,13 @@ impl AnimationEvent {
 pub struct AnimationGroupEntry {
     pub typ: ResourceAnimationType,
     pub file_index: u32,
-    pub events: Vec<AnimationEvent>,
+    pub events: Box<[AnimationEvent]>,
     pub walk_length: f32,
-    pub walk_graph: Vec<Vector2<f32>>,
+    pub walk_graph: Box<[Vector2<f32>]>,
 }
 
 impl AnimationGroupEntry {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map(
             tuple((
                 ResourceAnimationType::parse,
@@ -128,19 +164,23 @@ impl AnimationGroupEntry {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct AnimationGroup {
-    pub name: String,
-    pub animations: Vec<AnimationGroupEntry>,
+    pub name: Box<str>,
+    pub animations: Box<[AnimationGroupEntry]>,
 }
 
 impl AnimationGroup {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple_map(pair(
-            sized_string,
-            parse_objects_u32(AnimationGroupEntry::parse),
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            pair(sized_string, parse_objects_u32(AnimationGroupEntry::parse)),
+            ttr_closure! {
+                AnimationGroup {
+                    name, animations
+                }
+            },
+        )(i)
     }
 }
 
@@ -149,22 +189,18 @@ impl AnimationGroup {
 pub struct JmxRes {
     pub header: JmxResHeader,
     pub bounding_box: BoundingBox,
-    pub material_sets: Vec<MaterialDescriptor>,
-    pub mesh_paths: Vec<(PathBuf, Option<u32>)>,
+    pub material_sets: Box<[MaterialDescriptor]>,
+    pub mesh_paths: Box<[(Box<Path>, Option<u32>)]>,
     pub animation: Animation,
-    pub skeleton_paths: Vec<(PathBuf, Vec<u8>)>,
-    pub mesh_groups: Vec<MeshGroup>,
-    pub animation_groups: Vec<AnimationGroup>,
+    pub skeleton_paths: Box<[(Box<Path>, Box<[u8]>)]>,
+    pub mesh_groups: Box<[MeshGroup]>,
+    pub animation_groups: Box<[AnimationGroup]>,
 }
 
-impl SrFile for JmxRes {
-    type Input = [u8];
-    type Output = Self;
-    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> IResult<&'i Self::Input, Self::Output, E> {
+impl JmxRes {
+    pub fn parse<'i>(i: &'i [u8]) -> IResult<&'i [u8], Self> {
         let (_, header) = nom::error::context("resource header", JmxResHeader::parse)(i)?;
-        let (_, bounding_box) = BoundingBox::parse(&i[header.bounding_box_offset as usize..])?;
+        let (_, bounding_box) = BoundingBox::parse(&i[header.collision_offset as usize..])?;
         let (_, material_sets) =
             parse_objects_u32(MaterialDescriptor::parse)(&i[header.material_offset as usize..])?;
         let (_, mesh_paths) = parse_objects_u32(pair(sized_path, cond(header.unk0 == 1, le_u32)))(
@@ -195,7 +231,7 @@ impl SrFile for JmxRes {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxResHeader {
     pub material_offset: u32,
@@ -205,39 +241,61 @@ pub struct JmxResHeader {
     pub mesh_group_offset: u32,
     pub animation_group_offset: u32,
     // FIXME effects
-    pub sound_effect_offset: u32,
-    pub bounding_box_offset: u32,
+    pub mod_palette_offset: u32,
+    pub collision_offset: u32,
     pub unk0: u32,
     pub unk1: u32,
     pub unk2: u32,
     pub unk3: u32,
     pub unk4: u32,
     pub res_type: ResourceType,
-    pub name: String,
+    pub name: Box<str>,
     //pub unk5: [u8; 48],
 }
 
 impl JmxResHeader {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    pub fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         preceded(
+            // FIXME:  107 and 108 have differences from 109
             tag("JMXVRES 0109"),
-            struple((
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                ResourceType::parse,
-                sized_string,
-            )),
+            map(
+                tuple((
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    ResourceType::parse,
+                    sized_string,
+                )),
+                ttr_closure! {
+                    JmxResHeader {
+                        material_offset,
+                        mesh_offset,
+                        skeleton_offset,
+                        animation_offset,
+                        mesh_group_offset,
+                        animation_group_offset,
+                        mod_palette_offset,
+                        collision_offset,
+                        unk0,
+                        unk1,
+                        unk2,
+                        unk3,
+                        unk4,
+                        res_type,
+                        name
+                    }
+                },
+            ),
         )(i)
     }
 }

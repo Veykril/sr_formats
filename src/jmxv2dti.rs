@@ -1,41 +1,34 @@
 use nom::bytes::complete::tag;
 use nom::character::complete::{char, line_ending, multispace1};
-use nom::combinator::flat_map;
-use nom::error::ParseError;
+use nom::combinator::{flat_map, map};
 use nom::multi::{many0, many_m_n};
-use nom::sequence::{delimited, pair, preceded, terminated};
+use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::IResult;
-use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use std::path::PathBuf;
+use std::path::Path;
 
-use crate::parser_ext::combinator::struple;
-use crate::parser_ext::string::{
+use crate::parser_ext::text::{
     parse_quoted_path_buf, parse_quoted_string, parse_u16_str, parse_u32_hex_str,
 };
-use crate::SrFile;
+use crate::ttr_closure;
 
 #[cfg_attr(feature = "serde", derive(Serialize))]
-#[derive(Debug, PartialEq, Struple)]
+#[derive(Debug, PartialEq)]
 pub struct TileInfo2D {
     pub index: u16,
     // tile sound?
     pub flag: u32,
-    pub category: String,
-    pub file: PathBuf,
+    pub category: Box<str>,
+    pub file: Box<Path>,
     // (model index into object.ifo, amount of objects placed)
     pub extra: Vec<(u16, u16)>,
 }
 
-impl SrFile for TileInfo2D {
-    type Input = str;
-    type Output = Vec<Self>;
-    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> IResult<&'i Self::Input, Self::Output, E> {
+impl TileInfo2D {
+    pub fn parse<'i>(i: &'i str) -> IResult<&'i str, Vec<TileInfo2D>> {
         preceded(
             tag("JMXV2DTI1001\n"),
             flat_map(terminated(parse_u16_str, line_ending), |count| {
@@ -46,22 +39,29 @@ impl SrFile for TileInfo2D {
 }
 
 impl TileInfo2D {
-    fn parse_single<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Self, E> {
+    fn parse_single<'a>(i: &'a str) -> IResult<&'a str, Self> {
         terminated(
-            struple((
-                parse_u16_str,
-                preceded(multispace1, parse_u32_hex_str),
-                preceded(multispace1, parse_quoted_string),
-                preceded(multispace1, parse_quoted_path_buf),
-                many0(preceded(
-                    multispace1,
-                    delimited(
-                        char('{'),
-                        pair(terminated(parse_u16_str, char(',')), parse_u16_str),
-                        char('}'),
-                    ),
+            map(
+                tuple((
+                    parse_u16_str,
+                    preceded(multispace1, parse_u32_hex_str),
+                    preceded(multispace1, parse_quoted_string),
+                    preceded(multispace1, parse_quoted_path_buf),
+                    many0(preceded(
+                        multispace1,
+                        delimited(
+                            char('{'),
+                            pair(terminated(parse_u16_str, char(',')), parse_u16_str),
+                            char('}'),
+                        ),
+                    )),
                 )),
-            )),
+                ttr_closure! {
+                    TileInfo2D {
+                        index, flag, category, file, extra
+                    }
+                },
+            ),
             line_ending,
         )(i)
     }

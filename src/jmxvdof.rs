@@ -1,28 +1,24 @@
+use std::path::Path;
+
 use mint::Vector3;
 use nom::bytes::complete::tag;
 use nom::combinator::{cond, flat_map, map};
-use nom::error::ParseError;
-use nom::multi::count;
 use nom::number::complete::{le_f32, le_u16, le_u32, le_u8};
 use nom::sequence::{pair, preceded, tuple};
 use nom::IResult;
-use struple::Struple;
 
 #[cfg(feature = "serde")]
 use serde::Serialize;
 
-use std::path::PathBuf;
-
-use crate::parser_ext::combinator::struple;
-use crate::parser_ext::multi::parse_objects_u32;
+use crate::parser_ext::multi::{count, parse_objects_u32};
 use crate::parser_ext::number::{vector3_f32, vector6_f32};
-use crate::parser_ext::string::small_sized_string;
-use crate::SrFile;
+use crate::parser_ext::string::{sized_path, sized_string};
+use crate::ttr_closure;
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectPoint {
-    pub name: String,
+    pub name: Box<str>,
     pub position: Vector3<f32>,
     pub rotation: Vector3<f32>,
     pub size: Vector3<f32>,
@@ -33,46 +29,61 @@ pub struct RoomObjectPoint {
 }
 
 impl RoomObjectPoint {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((
-            small_sized_string,
-            vector3_f32,
-            vector3_f32,
-            vector3_f32,
-            vector3_f32,
-            le_f32,
-            le_f32,
-            le_f32,
-        ))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((
+                sized_string,
+                vector3_f32,
+                vector3_f32,
+                vector3_f32,
+                vector3_f32,
+                le_f32,
+                le_f32,
+                le_f32,
+            )),
+            ttr_closure! {
+                RoomObjectPoint {
+                    name,
+                    position,
+                    rotation,
+                    size,
+                    rotation2,
+                    unk0,
+                    unk2,
+                    unk1
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectEntry {
-    pub name: String,
-    pub path: PathBuf,
+    pub name: Box<str>,
+    pub path: Box<Path>,
     pub position: Vector3<f32>,
     pub rotation: Vector3<f32>,
     pub scale: Vector3<f32>,
-    pub flag: u32,
+    pub flag: u32, //0 = None, 2 = ColObj, 4 = WaterObj
     pub water_extra: Option<u32>,
     pub id: u32,
     pub unk0: f32,
 }
 
 impl RoomObjectEntry {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map(
             tuple((
-                small_sized_string,
-                map(small_sized_string, From::from),
+                sized_string,
+                sized_path,
                 vector3_f32,
                 vector3_f32,
                 vector3_f32,
+                // FIXME:
                 flat_map(le_u32, |f| map(cond(f == 0x04, le_u32), move |w| (f, w))),
                 le_u32,
-                le_f32,
+                le_f32, // FIXME: <- this is what should be read for flag 0x04
             )),
             |(name, path, position, rotation, scale, (flag, water_extra), id, unk0)| {
                 RoomObjectEntry {
@@ -91,7 +102,7 @@ impl RoomObjectEntry {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectExtraA {
     pub unk0: f32,
@@ -101,12 +112,22 @@ pub struct RoomObjectExtraA {
 }
 
 impl RoomObjectExtraA {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((le_f32, le_f32, le_f32, le_f32))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((le_f32, le_f32, le_f32, le_f32)),
+            ttr_closure! {
+                RoomObjectExtraA {
+                    unk0,
+                    unk1,
+                    unk2,
+                    unk3
+                }
+            },
+        )(i)
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObjectExtraB {
     pub unk0: f32,
@@ -119,58 +140,62 @@ pub struct RoomObjectExtraB {
 }
 
 impl RoomObjectExtraB {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((le_f32, le_f32, le_f32, le_f32, le_f32, le_f32, le_f32)),
+            ttr_closure! {
+                RoomObjectExtraB { unk0, unk1, unk2, unk3, unk4, unk5, unk6 }
+            },
+        )(i)
     }
 }
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct RoomObject {
-    pub path: PathBuf,
-    pub name: PathBuf,
-    // always 0.0?
-    pub unk0: f32,
+    pub path: Box<Path>,
+    pub name: Box<str>,
+    pub unk0: u32,
     pub position: Vector3<f32>,
     pub yaw: f32,
-    pub pitch: f32,
+    pub is_entrance: f32,
     pub aabb: [f32; 6],
-    pub unk1: f32,
-    pub unk2: f32,
-    pub unk3: f32,
-    pub unk4: f32,
-    pub unk5: f32,
+    pub unk1: u32,
+    pub fog_color: f32,
+    pub fog_near_plane: f32,
+    pub fog_far_plane: f32,
+    pub fog_intensity: f32,
     pub extra_a: Option<RoomObjectExtraA>,
     pub extra_b: Option<RoomObjectExtraB>,
-    pub unk6: u32,
+    pub unk6: Box<str>,
     pub room_index: u32,
     pub floor_index: u32,
-    pub connected_objects: Vec<u32>,
-    pub indirect_connected_objects: Vec<u32>,
+    pub connected_objects: Box<[u32]>,
+    pub indirect_connected_objects: Box<[u32]>,
     pub unk7: u32,
-    pub entries: Vec<RoomObjectEntry>,
-    pub points: Vec<RoomObjectPoint>,
+    pub entries: Box<[RoomObjectEntry]>,
+    pub points: Box<[RoomObjectPoint]>,
 }
 
 impl RoomObject {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map(
             tuple((
-                map(small_sized_string, From::from),
-                map(small_sized_string, From::from),
-                le_f32,
+                sized_path,
+                sized_string,
+                le_u32,
                 vector3_f32,
                 le_f32,
                 le_f32,
                 vector6_f32,
-                le_f32,
+                le_u32,
                 le_f32,
                 le_f32,
                 le_f32,
                 le_f32,
                 flat_map(le_u8, |val| cond(val == 0x01, RoomObjectExtraA::parse)),
                 flat_map(le_u8, |val| cond(val == 0x02, RoomObjectExtraB::parse)),
-                le_u32,
+                sized_string,
                 le_u32,
                 le_u32,
                 parse_objects_u32(le_u32),
@@ -189,10 +214,10 @@ impl RoomObject {
                 pitch,
                 aabb,
                 unk1,
-                unk2,
-                unk3,
-                unk4,
-                unk5,
+                fog_color,
+                fog_near_plane,
+                fog_far_plane,
+                fog_intensity,
                 extra_a,
                 extra_b,
                 unk6,
@@ -208,13 +233,13 @@ impl RoomObject {
                 unk0,
                 position,
                 yaw,
-                pitch,
+                is_entrance: pitch,
                 aabb,
                 unk1,
-                unk2,
-                unk3,
-                unk4,
-                unk5,
+                fog_color,
+                fog_near_plane,
+                fog_far_plane,
+                fog_intensity,
                 extra_a,
                 extra_b,
                 unk6,
@@ -230,17 +255,24 @@ impl RoomObject {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct ObjectGroup {
-    pub name: String,
+    pub name: Box<str>,
     pub flag: u32,
-    pub object_indices: Vec<u32>,
+    pub object_indices: Box<[u32]>,
 }
 
 impl ObjectGroup {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((small_sized_string, le_u32, parse_objects_u32(le_u32)))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((sized_string, le_u32, parse_objects_u32(le_u32))),
+            ttr_closure! {
+                ObjectGroup {
+                    name, flag, object_indices
+                }
+            },
+        )(i)
     }
 }
 
@@ -248,11 +280,11 @@ impl ObjectGroup {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Link {
     pub id: u32,
-    pub connections: Vec<u32>,
+    pub connections: Box<[u32]>,
 }
 
 impl Link {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map(
             pair(le_u32, parse_objects_u32(le_u32)),
             |(id, connections)| Link { id, connections },
@@ -260,18 +292,25 @@ impl Link {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Links {
     pub unk0: u32,
     pub unk1: u32,
     pub unk2: u32,
-    pub links: Vec<Link>,
+    pub links: Box<[Link]>,
 }
 
 impl Links {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
-        struple((le_u32, le_u32, le_u32, parse_objects_u32(Link::parse)))(i)
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
+        map(
+            tuple((le_u32, le_u32, le_u32, parse_objects_u32(Link::parse))),
+            ttr_closure! {
+                Links {
+                    unk0, unk1, unk2, links
+                }
+            },
+        )(i)
     }
 }
 
@@ -281,20 +320,16 @@ pub struct JmxDungeon {
     pub header: JmxDungeonHeader,
     pub aabb: [f32; 6],
     pub oobb: [f32; 6],
-    pub room_objects: Vec<RoomObject>,
+    pub room_objects: Box<[RoomObject]>,
     pub links: Links,
-    pub object_connections: Vec<Vec<u32>>,
-    pub room_names: Vec<String>,
-    pub floor_names: Vec<String>,
-    pub object_groups: Vec<ObjectGroup>,
+    pub object_connections: Box<[Box<[u32]>]>,
+    pub room_names: Box<[Box<str>]>,
+    pub floor_names: Box<[Box<str>]>,
+    pub object_groups: Box<[ObjectGroup]>,
 }
 
-impl SrFile for JmxDungeon {
-    type Input = [u8];
-    type Output = Self;
-    fn nom_parse<'i, E: ParseError<&'i Self::Input>>(
-        i: &'i Self::Input,
-    ) -> IResult<&'i Self::Input, Self::Output, E> {
+impl JmxDungeon {
+    pub fn parse<'i>(i: &'i [u8]) -> IResult<&'i [u8], Self> {
         let (_, header) = JmxDungeonHeader::parse(i)?;
         let (_, (aabb, oobb)) =
             pair(vector6_f32, vector6_f32)(&i[header.bounding_boxes as usize..])?;
@@ -304,8 +339,8 @@ impl SrFile for JmxDungeon {
         let (_, object_connections) =
             parse_objects_u32(parse_objects_u32(le_u32))(&i[header.object_connections as usize..])?;
         let (_, (room_names, floor_names)) = pair(
-            parse_objects_u32(small_sized_string),
-            parse_objects_u32(small_sized_string),
+            parse_objects_u32(sized_string),
+            parse_objects_u32(sized_string),
         )(&i[header.index_names as usize..])?;
         let (_, object_groups) =
             parse_objects_u32(ObjectGroup::parse)(&i[header.object_groups as usize..])?;
@@ -327,7 +362,7 @@ impl SrFile for JmxDungeon {
     }
 }
 
-#[derive(Debug, Struple)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxDungeonHeader {
     pub room_objects: u32,
@@ -338,34 +373,51 @@ pub struct JmxDungeonHeader {
     pub unk0: u32,
     pub unk1: u32,
     pub bounding_boxes: u32,
-    pub unk2: u16,
-    pub unk3: u16,
-    pub dungeon_name: String,
+    pub ty: u32,
+    pub dungeon_name: Box<str>,
     pub unk4: u32,
     pub unk5: u32,
     pub region_id: u16,
 }
 
 impl JmxDungeonHeader {
-    fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         preceded(
             tag(b"JMXVDOF 0101"),
-            struple((
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u32,
-                le_u16,
-                le_u16,
-                small_sized_string,
-                le_u32,
-                le_u32,
-                le_u16,
-            )),
+            map(
+                tuple((
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    le_u32,
+                    sized_string,
+                    le_u32,
+                    le_u32,
+                    le_u16,
+                )),
+                ttr_closure! {
+                    JmxDungeonHeader {
+                        room_objects,
+                        object_connections,
+                        links,
+                        object_groups,
+                        index_names,
+                        unk0,
+                        unk1,
+                        bounding_boxes,
+                        ty,
+                        dungeon_name,
+                        unk4,
+                        unk5,
+                        region_id
+                    }
+                },
+            ),
         )(i)
     }
 }

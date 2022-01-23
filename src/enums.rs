@@ -1,5 +1,4 @@
 use nom::combinator::map_res;
-use nom::error::ParseError;
 use nom::number::complete::le_u32;
 use nom::IResult;
 
@@ -83,7 +82,7 @@ pub enum NewInterfaceType {
 }
 
 impl NewInterfaceType {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    pub fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map_res(le_u32, TryFrom::try_from)(i)
     }
 }
@@ -186,7 +185,7 @@ pub enum ResourceType {
 }
 
 impl ResourceType {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    pub fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map_res(le_u32, TryFrom::try_from)(i)
     }
 }
@@ -411,10 +410,11 @@ pub enum ResourceAnimationType {
     Vendor01 = 0x50,
 
     Shot = 0xBF,
+    Unknown = 0xFFFF_FFFF,
 }
 
 impl ResourceAnimationType {
-    pub fn parse<'a, E: ParseError<&'a [u8]>>(i: &'a [u8]) -> IResult<&'a [u8], Self, E> {
+    pub fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         nom::error::context(
             "unknown ResourceAnimationType",
             map_res(le_u32, TryFrom::try_from),
@@ -600,6 +600,8 @@ impl TryFrom<u32> for ResourceAnimationType {
             0x3B => ResourceAnimationType::Emotion10,
             0x50 => ResourceAnimationType::Vendor01,
             0xBF => ResourceAnimationType::Shot,
+            0xFFFF_FFFF => ResourceAnimationType::Unknown,
+
             val => return Err(UnknownResourceAnimationType(val)),
         })
     }

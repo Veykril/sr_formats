@@ -2,12 +2,20 @@
 name = "sr_formats"
 version = "0.1.0"
 authors = ["Lukas Wirth <lukastw97@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-nom = { version = "5.1", default-features = false, features = ["std"] }
-bitflags = "1.2"
-encoding_rs = "0.8"
-serde = { version = "1.0", features = ["derive"], optional = true }
-struple = "0.1"
-mint = "0.5"
+nom = { version = "7.1.0", default-features = false, features = ["std"] }
+bitflags = "1.3.2"
+encoding_rs = "0.8.30"
+serde = { version = "1.0.135", optional = true, features = ["derive"] }
+mint = "0.5.8"
+
+[features]
+default = []
+# can't have features and crate names clash, can't rename serde because its proc-macro relies on the crate name
+serde1 = ["mint/serde", "serde"]
+
+[dev-dependencies]
+# pk2 = { git = "https://github.com/Veykril/pk2", branch = "access" }
+pk2 = { path = "../pk2" }
