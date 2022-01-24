@@ -118,6 +118,12 @@ pub mod string {
         })(i)
     }
 
+    pub fn sized_string_ref<'i>(i: &'i [u8]) -> IResult<&'i [u8], Cow<'i, str>> {
+        map(flat_map(le_u32, take), |s| {
+            encoding_rs::EUC_KR.decode_without_bom_handling(s).0
+        })(i)
+    }
+
     /// Reads a sized_string and turns it into a PathBuf
     #[inline]
     pub fn sized_path<'i>(i: &'i [u8]) -> IResult<&'i [u8], Box<Path>> {
@@ -348,7 +354,7 @@ pub mod multi {
                         res.push(o);
                         input = i;
                     },
-                    Err(nom::Err::Error(e)) => {
+                    Err(nom::Err::Error(_)) => {
                         return Err(nom::Err::Error(make_error(i, nom::error::ErrorKind::Count)));
                     },
                     Err(e) => {
