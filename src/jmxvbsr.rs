@@ -17,31 +17,28 @@ use crate::{ttr_closure, ResourceAnimationType, ResourceType};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
-pub struct BoundingBox {
-    pub root_mesh: Box<str>,
-    pub bounding_box0: [f32; 6],
-    pub bounding_box1: [f32; 6],
-    pub extra_bounding_data: Box<[u8]>,
+pub struct CollisionInfo {
+    pub collision_mesh: Box<str>,
+    pub collision_box0: [f32; 6],
+    pub collision_box1: [f32; 6],
+    pub collision_matrix: Option<Box<[u8]>>,
 }
 
-impl BoundingBox {
+impl CollisionInfo {
     fn parse<'a>(i: &'a [u8]) -> IResult<&'a [u8], Self> {
         map(
             tuple((
                 sized_string,
                 vector6_f32,
                 vector6_f32,
-                map(
-                    flat_map(le_u32, |val| cond(val != 0, count(le_u8, 64))),
-                    |ebd| ebd.unwrap_or_default(),
-                ),
+                flat_map(le_u32, |val| cond(val != 0, count(le_u8, 64))),
             )),
             ttr_closure! {
-                BoundingBox {
-                    root_mesh,
-                    bounding_box0,
-                    bounding_box1,
-                    extra_bounding_data,
+                CollisionInfo {
+                    collision_mesh,
+                    collision_box0,
+                    collision_box1,
+                    collision_matrix,
                 }
             },
         )(i)
@@ -71,8 +68,8 @@ impl MaterialDescriptor {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct Animation {
-    pub unk0: u32,
-    pub unk1: u32,
+    pub type_version: u32,
+    pub type_user_define: u32,
     pub paths: Box<[Box<Path>]>,
 }
 
@@ -82,7 +79,7 @@ impl Animation {
             tuple((le_u32, le_u32, parse_objects_u32(sized_path))),
             ttr_closure! {
                 Animation {
-                    unk0, unk1, paths
+                    type_version, type_user_define, paths
                 }
             },
         )(i)
@@ -188,10 +185,11 @@ impl AnimationGroup {
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct JmxRes {
     pub header: JmxResHeader,
-    pub bounding_box: BoundingBox,
+    pub bounding_box: CollisionInfo,
     pub material_sets: Box<[MaterialDescriptor]>,
     pub mesh_paths: Box<[(Box<Path>, Option<u32>)]>,
     pub animation: Animation,
+    // CPrimBranch CPrimBone
     pub skeleton_paths: Box<[(Box<Path>, Box<[u8]>)]>,
     pub mesh_groups: Box<[MeshGroup]>,
     pub animation_groups: Box<[AnimationGroup]>,
@@ -200,7 +198,7 @@ pub struct JmxRes {
 impl JmxRes {
     pub fn parse<'i>(i: &'i [u8]) -> IResult<&'i [u8], Self> {
         let (_, header) = nom::error::context("resource header", JmxResHeader::parse)(i)?;
-        let (_, bounding_box) = BoundingBox::parse(&i[header.collision_offset as usize..])?;
+        let (_, bounding_box) = CollisionInfo::parse(&i[header.collision_offset as usize..])?;
         let (_, material_sets) =
             parse_objects_u32(MaterialDescriptor::parse)(&i[header.material_offset as usize..])?;
         let (_, mesh_paths) = parse_objects_u32(pair(sized_path, cond(header.unk0 == 1, le_u32)))(
@@ -211,9 +209,9 @@ impl JmxRes {
             &i[header.skeleton_offset as usize..],
         )?;
         let (_, mesh_groups) =
-            parse_objects_u32(MeshGroup::parse)(&i[header.mesh_group_offset as usize..])?;
+            parse_objects_u32(MeshGroup::parse)(&i[header.prim_mesh_group_offset as usize..])?;
         let (_, animation_groups) =
-            parse_objects_u32(AnimationGroup::parse)(&i[header.animation_group_offset as usize..])?;
+            parse_objects_u32(AnimationGroup::parse)(&i[header.prim_ani_group_offset as usize..])?;
 
         Ok((
             &[],
@@ -238,9 +236,8 @@ pub struct JmxResHeader {
     pub mesh_offset: u32,
     pub skeleton_offset: u32,
     pub animation_offset: u32,
-    pub mesh_group_offset: u32,
-    pub animation_group_offset: u32,
-    // FIXME effects
+    pub prim_mesh_group_offset: u32,
+    pub prim_ani_group_offset: u32,
     pub mod_palette_offset: u32,
     pub collision_offset: u32,
     pub unk0: u32,
@@ -248,9 +245,12 @@ pub struct JmxResHeader {
     pub unk2: u32,
     pub unk3: u32,
     pub unk4: u32,
+    // Object General Info
     pub res_type: ResourceType,
     pub name: Box<str>,
-    //pub unk5: [u8; 48],
+    pub unk5: u32,
+    pub unk6: u32,
+    //pub unk5: [u8; 40],
 }
 
 impl JmxResHeader {
@@ -275,6 +275,8 @@ impl JmxResHeader {
                     le_u32,
                     ResourceType::parse,
                     sized_string,
+                    le_u32,
+                    le_u32,
                 )),
                 ttr_closure! {
                     JmxResHeader {
@@ -282,8 +284,8 @@ impl JmxResHeader {
                         mesh_offset,
                         skeleton_offset,
                         animation_offset,
-                        mesh_group_offset,
-                        animation_group_offset,
+                        prim_mesh_group_offset,
+                        prim_ani_group_offset,
                         mod_palette_offset,
                         collision_offset,
                         unk0,
@@ -292,7 +294,9 @@ impl JmxResHeader {
                         unk3,
                         unk4,
                         res_type,
-                        name
+                        name,
+                        unk5,
+                        unk6
                     }
                 },
             ),
